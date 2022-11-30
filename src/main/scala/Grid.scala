@@ -163,29 +163,31 @@ object Grid {
   }
 
   @tailrec
-  def generateCompleted(iter: Int = 0): Grid = {
+  def solve(initGridCells: Array[Int], lastPrintTimeMillis: Long = 0): Grid = {
     val filter = (1 to 9).toSet
-    val nums = (0 until 9 * 9).foldLeft((Array.fill(9 * 9)(0), true)) {
+    val cells = initGridCells.indices.foldLeft((initGridCells.clone(), true)) {
       case ((arr, continue), idx) =>
-        val keepGoing = if (continue) {
+        val keepGoing = if (continue && arr(idx) == 0) {
           val numberOfColumns = 9
           val column = idx % numberOfColumns
           val row = (idx - column) / numberOfColumns
           val subGridIdx = getSubGridIdx(row, column)
           updateByIdx(arr, idx, filter.removedAll(getCol(arr)(column) ++ getRow(arr)(row) ++ getSubGrid(arr)(subGridIdx)).toArray)
         } else {
-          false
+          continue
         }
         (arr, keepGoing)
     }._1
-    val grid = Grid(nums)
+    val grid = Grid(cells)
     if (isFinished(grid)) {
       grid
     } else {
-      if (iter % 50000 == 0) {
+      var printTimeMillis = lastPrintTimeMillis
+      if (System.currentTimeMillis() - lastPrintTimeMillis >= 5000) {
         printGrid(grid.cells)
+        printTimeMillis = System.currentTimeMillis()
       }
-      generateCompleted(iter + 1)
+      solve(initGridCells, printTimeMillis)
     }
   }
 

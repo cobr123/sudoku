@@ -75,8 +75,27 @@ class GridSpec extends AnyFunSpec {
   }
 
   it("get finished random Grid") {
-    val grid = Grid.generateCompleted()
+    val initGridNums = Array.fill(9 * 9)(0)
+    val grid = Grid.solve(initGridNums)
     Grid.printGrid(grid.cells)
     assert(Grid.isFinished(grid))
+  }
+
+  it("get finished from partly empty Grid") {
+    val r1 = Row(0, 3, 0, 6, 0, 8, 9, 1, 2)
+    val r2 = Row(0, 0, 0, 1, 9, 5, 3, 0, 8)
+    val r3 = Row(0, 0, 0, 3, 4, 0, 5, 6, 7)
+    val r4 = Row(0, 5, 9, 0, 6, 1, 0, 2, 3)
+    val r5 = Row(4, 2, 6, 8, 0, 3, 7, 9, 1)
+    val r6 = Row(0, 1, 3, 9, 2, 0, 8, 5, 6)
+    val r7 = Row(9, 6, 0, 5, 3, 7, 0, 8, 4)
+    val r8 = Row(2, 8, 7, 0, 1, 9, 6, 0, 5)
+    val r9 = Row(3, 0, 5, 2, 8, 6, 1, 7, 0)
+    val initGrid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
+    val grid = Grid.solve(initGrid.cells)
+    Grid.printGrid(grid.cells)
+    assert(Grid.isFinished(grid))
+    assert(Grid.getRow(grid.cells)(0).apply(1) == 3)
+    assert(Grid.getRow(grid.cells)(1).apply(3) == 1)
   }
 }
