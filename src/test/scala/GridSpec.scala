@@ -14,7 +14,7 @@ class GridSpec extends AnyFunSpec {
     val c8 = SubGrid(5, 3, 7, 4, 1, 9, 2, 8, 6)
     val c9 = SubGrid(2, 8, 4, 6, 3, 5, 1, 7, 9)
     val grid = Grid(c1, c2, c3, c4, c5, c6, c7, c8, c9)
-    assert(Grid.isFinished(grid))
+    assert(Grid.isFinished(grid.cells))
   }
 
   it("solved Grid by rows") {
@@ -29,7 +29,7 @@ class GridSpec extends AnyFunSpec {
     val r9 = Row(3, 4, 5, 2, 8, 6, 1, 7, 9)
     val grid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
 
-    assert(Grid.isFinished(grid))
+    assert(Grid.isFinished(grid.cells))
 
     assert(Grid.getRow(grid.cells)(0).mkString("", " ", "") === r1.nums.mkString("", " ", ""))
     assert(Grid.getRow(grid.cells)(1).mkString("", " ", "") === r2.nums.mkString("", " ", ""))
@@ -63,7 +63,7 @@ class GridSpec extends AnyFunSpec {
     val c8 = SubGrid(5, 3, 7, 4, 1, 9, 2, 8, 6)
     val c9 = SubGrid(5, 3, 3, 4, 1, 9, 2, 8, 6)
     val grid = Grid(c1, c2, c3, c4, c5, c6, c7, c8, c9)
-    assert(!Grid.isFinished(grid))
+    assert(!Grid.isFinished(grid.cells))
   }
 
   it("not finished SubGrid") {
@@ -74,11 +74,47 @@ class GridSpec extends AnyFunSpec {
     assert(!SubGrid.isFilledCorrect(subGrid2))
   }
 
+  it("getSubGrid") {
+    val r1 = Row(5, 3, 4, 6, 7, 8, 9, 1, 2)
+    val r2 = Row(6, 7, 2, 1, 9, 5, 3, 4, 8)
+    val r3 = Row(1, 9, 8, 3, 4, 2, 5, 6, 7)
+
+    val r4 = Row(8, 5, 9, 7, 6, 1, 4, 2, 3)
+    val r5 = Row(4, 2, 6, 8, 5, 3, 7, 9, 1)
+    val r6 = Row(7, 1, 3, 9, 2, 4, 8, 5, 6)
+
+    val r7 = Row(9, 6, 1, 5, 3, 7, 2, 8, 4)
+    val r8 = Row(2, 8, 7, 4, 1, 9, 6, 3, 5)
+    val r9 = Row(3, 4, 5, 2, 8, 6, 1, 7, 9)
+
+    val grid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
+
+    assert(Grid.getSubGrid(grid.cells)(0).mkString("", " ", "") === "5 3 4 6 7 2 1 9 8")
+    assert(Grid.getSubGrid(grid.cells)(1).mkString("", " ", "") === "6 7 8 1 9 5 3 4 2")
+    assert(Grid.getSubGrid(grid.cells)(2).mkString("", " ", "") === "9 1 2 3 4 8 5 6 7")
+
+    assert(Grid.getSubGrid(grid.cells)(3).mkString("", " ", "") === "8 5 9 4 2 6 7 1 3")
+    assert(Grid.getSubGrid(grid.cells)(4).mkString("", " ", "") === "7 6 1 8 5 3 9 2 4")
+    assert(Grid.getSubGrid(grid.cells)(5).mkString("", " ", "") === "4 2 3 7 9 1 8 5 6")
+
+    assert(Grid.getSubGrid(grid.cells)(6).mkString("", " ", "") === "9 6 1 2 8 7 3 4 5")
+    assert(Grid.getSubGrid(grid.cells)(7).mkString("", " ", "") === "5 3 7 4 1 9 2 8 6")
+    assert(Grid.getSubGrid(grid.cells)(8).mkString("", " ", "") === "2 8 4 6 3 5 1 7 9")
+
+    assert(SubGrid.getRow(Grid.getSubGrid(grid.cells)(8))(0).mkString("", " ", "") === "2 8 4")
+    assert(SubGrid.getRow(Grid.getSubGrid(grid.cells)(8))(1).mkString("", " ", "") === "6 3 5")
+    assert(SubGrid.getRow(Grid.getSubGrid(grid.cells)(8))(2).mkString("", " ", "") === "1 7 9")
+
+    assert(SubGrid.getCol(Grid.getSubGrid(grid.cells)(8))(0).mkString("", " ", "") === "2 6 1")
+    assert(SubGrid.getCol(Grid.getSubGrid(grid.cells)(8))(1).mkString("", " ", "") === "8 3 7")
+    assert(SubGrid.getCol(Grid.getSubGrid(grid.cells)(8))(2).mkString("", " ", "") === "4 5 9")
+  }
+
   it("get finished random Grid") {
     val initGridNums = Array.fill(9 * 9)(0)
     val grid = Grid.solve(initGridNums)
     Grid.printGrid(grid.cells)
-    assert(Grid.isFinished(grid))
+    assert(Grid.isFinished(grid.cells))
   }
 
   it("get finished from partly empty Grid") {
@@ -94,7 +130,7 @@ class GridSpec extends AnyFunSpec {
     val initGrid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
     val grid = Grid.solve(initGrid.cells)
     Grid.printGrid(grid.cells)
-    assert(Grid.isFinished(grid))
+    assert(Grid.isFinished(grid.cells))
     assert(Grid.getRow(grid.cells)(0).apply(1) == 3)
     assert(Grid.getRow(grid.cells)(1).apply(3) == 1)
   }

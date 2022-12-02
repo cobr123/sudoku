@@ -106,10 +106,14 @@ object Grid {
     this (rows.flatMap(_.nums))
   }
 
-  def isFinished(grid: Grid): Boolean = {
-    (0 until 9).map(getCol(grid.cells)).forall(SubGrid.isCorrect) &&
-      (0 until 9).map(getRow(grid.cells)).forall(SubGrid.isCorrect) &&
-      (0 until 9).map(getSubGrid(grid.cells)).forall(SubGrid.isCorrect)
+  private val colIndexes: Array[Int] = (0 until 9).toArray
+  private val rowIndexes: Array[Int] = (0 until 9).toArray
+  private val subGridIndexes: Array[Int] = (0 until 3).toArray
+
+  def isFinished(cells: Array[Int]): Boolean = {
+    colIndexes.map(getCol(cells)).forall(SubGrid.isCorrect) &&
+      rowIndexes.map(getRow(cells)).forall(SubGrid.isCorrect) &&
+      subGridIndexes.map(getSubGrid(cells)).forall(SubGrid.isCorrect)
   }
 
   def getSubGrid(cells: Array[Int])(subGridIdx: Int): Array[Int] = {
@@ -118,12 +122,9 @@ object Grid {
     val row = (subGridIdx - column) / numberOfColumns
 
     val idx = (row * 9 + column) * 3
-    val nums = cells.slice(idx, idx + 3) ++
+    cells.slice(idx, idx + 3) ++
       cells.slice(idx + 9, idx + 9 + 3) ++
       cells.slice(idx + 9 + 9, idx + 9 + 9 + 3)
-    //    Grid.printGrid(cells)
-    //     SubGrid.printSubGrid(nums)
-    nums
   }
 
   def getCol(cells: Array[Int])(col: Int): Array[Int] = {
@@ -136,7 +137,7 @@ object Grid {
     cells.slice(from, until)
   }
 
-  def updateByIdx(arr: Array[Int], idx: Int, available: Array[Int]): Boolean = {
+  private def updateByIdx(arr: Array[Int], idx: Int, available: Array[Int]): Boolean = {
     if (available.isEmpty) {
       false
     } else {
@@ -145,7 +146,7 @@ object Grid {
     }
   }
 
-  def getSubGridIdx(gridRow: Int, gridCol: Int): Int = {
+  private def getSubGridIdx(gridRow: Int, gridCol: Int): Int = {
     val idx = (gridRow, gridCol) match {
       case (row, col) if row >= 0 && row < 3 && col >= 0 && col < 3 => 0
       case (row, col) if row >= 0 && row < 3 && col >= 3 && col < 6 => 1
@@ -162,29 +163,39 @@ object Grid {
     idx
   }
 
+  private val availableValues = (1 to 9).toSet
+
+  @tailrec
+  private def trySolveRandom(gridCells: Array[Int], idx: Int = 0): Array[Int] = {
+    if (idx < gridCells.length) {
+      if (gridCells(idx) == 0) {
+        val numberOfColumns = 9
+        val column = idx % numberOfColumns
+        val row = (idx - column) / numberOfColumns
+        val subGridIdx = getSubGridIdx(row, column)
+        val newFilter = availableValues.removedAll(
+          getCol(gridCells)(column) ++
+            getRow(gridCells)(row) ++
+            getSubGrid(gridCells)(subGridIdx)
+        ).toArray
+        updateByIdx(gridCells, idx, newFilter)
+      }
+      trySolveRandom(gridCells, idx + 1)
+    } else {
+      gridCells
+    }
+  }
+
   @tailrec
   def solve(initGridCells: Array[Int], lastPrintTimeMillis: Long = 0): Grid = {
-    val filter = (1 to 9).toSet
-    val cells = initGridCells.indices.foldLeft((initGridCells.clone(), true)) {
-      case ((arr, continue), idx) =>
-        val keepGoing = if (continue && arr(idx) == 0) {
-          val numberOfColumns = 9
-          val column = idx % numberOfColumns
-          val row = (idx - column) / numberOfColumns
-          val subGridIdx = getSubGridIdx(row, column)
-          updateByIdx(arr, idx, filter.removedAll(getCol(arr)(column) ++ getRow(arr)(row) ++ getSubGrid(arr)(subGridIdx)).toArray)
-        } else {
-          continue
-        }
-        (arr, keepGoing)
-    }._1
-    val grid = Grid(cells)
-    if (isFinished(grid)) {
-      grid
+    val cells = trySolveRandom(initGridCells.clone())
+
+    if (isFinished(cells)) {
+      Grid(cells)
     } else {
       var printTimeMillis = lastPrintTimeMillis
       if (System.currentTimeMillis() - lastPrintTimeMillis >= 5000) {
-        printGrid(grid.cells)
+        printGrid(cells)
         printTimeMillis = System.currentTimeMillis()
       }
       solve(initGridCells, printTimeMillis)
@@ -193,6 +204,6 @@ object Grid {
 
   def printGrid(cells: Array[Int]): Unit = {
     println("------------------------------------------------------")
-    (0 until 9).map(getRow(cells)(_).mkString("", " ", "")).foreach(println)
+    rowIndexes.map(getRow(cells)(_).mkString("", " ", "")).foreach(println)
   }
 }
