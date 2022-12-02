@@ -1,7 +1,13 @@
+import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.time.{Seconds, Span}
+
+import scala.language.postfixOps
 
 
-class GridSpec extends AnyFunSpec {
+class GridSpec extends AnyFunSpec with TimeLimitedTests {
+
+  override val timeLimit: Span = Span(10, Seconds)
 
   it("solved Grid") {
     val c1 = SubGrid(5, 3, 4, 6, 7, 2, 1, 9, 8)
