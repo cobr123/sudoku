@@ -8,18 +8,16 @@ final case class InMenuState() extends GameState
 
 final case class InGameState() extends GameState
 
-object GameState {
+object InGameState {
   val STORAGE_KEY_NAME = "GAME_STATE"
 
   implicit val decoder: Decoder[InGameState] = deriveDecoder
   implicit val encoder: Encoder[InGameState] = deriveEncoder
 
-  def apply(json: String): GameState = {
+  def apply(json: String): Option[InGameState] = {
     decode[InGameState](json) match {
-      case Left(ex) =>
-        ex.printStackTrace()
-        InMenuState()
-      case Right(gameState) => gameState
+      case Left(_) => None
+      case Right(gameState) => Some(gameState)
     }
   }
 }

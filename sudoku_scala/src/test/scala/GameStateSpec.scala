@@ -5,12 +5,12 @@ class GameStateSpec extends AnyFunSpec{
 
   it("encode and decode InGameState") {
     val inGameState = InGameState()
-    val state = GameState(inGameState.asJson.noSpaces)
-    assert(inGameState === state)
+    val state = InGameState(inGameState.asJson.noSpaces)
+    assert(Some(inGameState) === state)
   }
 
   it("encode and decode InMenuState") {
-    val state = GameState("")
-    assert(InMenuState() === state)
+    val state = InGameState("")
+    assert(None === state)
   }
 }
