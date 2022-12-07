@@ -117,7 +117,7 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
   }
 
   it("get finished random Grid") {
-    val initGridNums = Array.fill(9 * 9)(0)
+    val initGridNums = Grid().cells
     val grid = Grid.solve(initGridNums)
     Grid.printGrid(grid.cells)
     assert(Grid.isFinished(grid.cells))
@@ -140,4 +140,30 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     assert(Grid.getRow(grid.cells)(0).apply(1) == 3)
     assert(Grid.getRow(grid.cells)(1).apply(3) == 1)
   }
+
+  private def getSolvedGrid: Grid = {
+    val r1 = Row(5, 3, 4, 6, 7, 8, 9, 1, 2)
+    val r2 = Row(6, 7, 2, 1, 9, 5, 3, 4, 8)
+    val r3 = Row(1, 9, 8, 3, 4, 2, 5, 6, 7)
+    val r4 = Row(8, 5, 9, 7, 6, 1, 4, 2, 3)
+    val r5 = Row(4, 2, 6, 8, 5, 3, 7, 9, 1)
+    val r6 = Row(7, 1, 3, 9, 2, 4, 8, 5, 6)
+    val r7 = Row(9, 6, 1, 5, 3, 7, 2, 8, 4)
+    val r8 = Row(2, 8, 7, 4, 1, 9, 6, 3, 5)
+    val r9 = Row(3, 4, 5, 2, 8, 6, 1, 7, 9)
+    val grid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
+    assert(Grid.isFinished(grid.cells))
+    grid
+  }
+
+  it("change solved grid by complexity") {
+    Complexity.values.foreach { complexity =>
+      val grid = getSolvedGrid
+      Complexity.changeSolvedGridByComplexity(grid, complexity)
+      assert(grid.cells.count(_ != 0) == complexity.solvedCellCount)
+      println(s"${complexity.entryName}: ${complexity.solvedCellCount}")
+      Grid.printGrid(grid.cells)
+    }
+  }
+
 }

@@ -25,6 +25,7 @@ lazy val sudoku_scala = (project in file("./sudoku_scala"))
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
       "com.beachape" %%% "enumeratum" % "1.7.0",
+      "com.beachape" %%% "enumeratum-circe" % "1.7.0",
       "org.scalatest" %% "scalatest" % "3.2.14" % "test",
     )
   )

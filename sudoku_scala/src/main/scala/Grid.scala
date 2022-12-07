@@ -1,11 +1,18 @@
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+
 import scala.annotation.tailrec
 import scala.util.Random
 
-case class Grid(cells: Array[Int]) {
+final case class Grid(cells: Array[Int]) {
   assert(cells.length == 9 * 9)
 }
 
 object Grid {
+
+  implicit val decoder: Decoder[Grid] = deriveDecoder
+  implicit val encoder: Encoder[Grid] = deriveEncoder
+
   def apply(subGrids: SubGrid*): Grid = {
     val rows = List(0, 3, 6).flatMap { i =>
       subGrids.slice(i, i + 3).flatMap(sg => SubGrid.getRow(sg.nums)(0)) ++
@@ -18,6 +25,8 @@ object Grid {
   def apply(rows: Array[Row]): Grid = {
     this (rows.flatMap(_.nums))
   }
+
+  def apply(): Grid = Grid(Array.fill(9 * 9)(0))
 
   private val colIndexes: Array[Int] = (0 until 9).toArray
   private val rowIndexes: Array[Int] = (0 until 9).toArray
