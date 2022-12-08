@@ -29,11 +29,9 @@ object Main {
   }
 
   private def addContinueBtn(inGameState: InGameState): Unit = {
-    val inputStyle = "padding-left: 7px; padding-right: 7px; padding-top: 2px; padding-bottom: 2px; margin: 5px;"
     val btn = document.createElement("input")
     btn.setAttribute("type", "button")
     btn.setAttribute("value", s"Continue: ${inGameState.complexity.entryName}")
-    btn.setAttribute("style", inputStyle)
     btn.addEventListener("click", { (_: dom.MouseEvent) =>
       drawInGameState(inGameState)
     })
@@ -42,11 +40,9 @@ object Main {
   }
 
   private def addNewGameBtn(): Unit = {
-    val inputStyle = "padding-left: 7px; padding-right: 7px; padding-top: 2px; padding-bottom: 2px; margin: 5px;"
     val btn = document.createElement("input")
     btn.setAttribute("type", "button")
     btn.setAttribute("value", "New Game")
-    btn.setAttribute("style", inputStyle)
     btn.addEventListener("click", { (_: dom.MouseEvent) =>
       drawInMenuChooseComplexityState()
     })
@@ -57,11 +53,9 @@ object Main {
   private def drawInMenuChooseComplexityState(): Unit = {
     clearScreen()
     Complexity.values.foreach { complexity =>
-      val inputStyle = "padding-left: 7px; padding-right: 7px; padding-top: 2px; padding-bottom: 2px; margin: 5px;"
       val btn = document.createElement("input")
       btn.setAttribute("type", "button")
       btn.setAttribute("value", complexity.entryName)
-      btn.setAttribute("style", inputStyle)
       btn.addEventListener("click", { (_: dom.MouseEvent) =>
         btn.setAttribute("value", s"${btn.getAttribute("value")}. Loading...")
         btn.setAttribute("disabled", "true")
@@ -81,6 +75,55 @@ object Main {
   private def drawInGameState(inGameState: InGameState): Unit = {
     clearScreen()
     Grid.printGrid(inGameState.grid.cells)
+    drawGameTable(inGameState)
+    drawControls(inGameState)
+    drawNumbers(inGameState)
+  }
+
+  private var selectedCell: Option[Int] = None
+
+  private def drawGameTable(inGameState: InGameState): Unit = {
+    val table = document.createElement("table")
+    val tr = document.createElement("tr")
+    table.append(tr)
+
+    inGameState.grid.cells.zipWithIndex.foldLeft(tr) {
+      case (tr, (cell, idx)) =>
+        val td = document.createElement("td")
+        td.setAttribute("id", s"cell_$idx")
+        if (cell == 0) {
+          td.append("")
+        } else {
+          td.append(s"$cell")
+        }
+        td.addEventListener("click", { (_: dom.MouseEvent) =>
+          selectedCell.foreach { idx =>
+            val td = document.getElementById(s"cell_$idx")
+            td.setAttribute("style", "")
+          }
+          selectedCell = Some(idx)
+          td.setAttribute("style", "background-color: #e2e2e2;")
+        })
+        tr.append(td)
+
+        if ((idx + 1) % 9 == 0 && idx < inGameState.grid.cells.length) {
+          val tr = document.createElement("tr")
+          table.append(tr)
+          tr
+        } else {
+          tr
+        }
+    }
+    document.body.appendChild(table)
+    document.body.appendChild(document.createElement("br"))
+  }
+
+  private def drawControls(inGameState: InGameState): Unit = {
+
+  }
+
+  private def drawNumbers(inGameState: InGameState): Unit = {
+
   }
 
 }
