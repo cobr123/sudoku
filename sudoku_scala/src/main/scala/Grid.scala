@@ -129,4 +129,9 @@ object Grid {
     println("------------------------------------------------------")
     rowIndexes.map(getRow(cells)(_).mkString("", " ", "")).foreach(println)
   }
+
+  def placeNumber(cells: Array[Int], idx: Int, number: Int): Boolean = {
+    cells(idx) = number
+    Random.nextBoolean()
+  }
 }

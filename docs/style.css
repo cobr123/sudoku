@@ -6,6 +6,22 @@ td {
   height: 2em;
 }
 
+td.selected {
+  border: 1px solid #ddd;
+  background-color: #e2e2e2;
+  text-align: center;
+  width: 2em;
+  height: 2em;
+}
+
+td.error {
+  border: 1px solid #ddd;
+  color: red;
+  text-align: center;
+  width: 2em;
+  height: 2em;
+}
+
 input[type=button] {
   padding-left: 7px;
   padding-right: 7px;

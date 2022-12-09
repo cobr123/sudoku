@@ -1,6 +1,6 @@
 
 import org.scalajs.dom
-import org.scalajs.dom.{document, window}
+import org.scalajs.dom.{Element, document, window}
 
 object Main {
 
@@ -80,7 +80,7 @@ object Main {
     drawNumbers(inGameState)
   }
 
-  private var selectedCell: Option[Int] = None
+  private var selectedIdx: Option[Int] = None
 
   private def drawGameTable(inGameState: InGameState): Unit = {
     val table = document.createElement("table")
@@ -88,21 +88,16 @@ object Main {
     table.append(tr)
 
     inGameState.grid.cells.zipWithIndex.foldLeft(tr) {
-      case (tr, (cell, idx)) =>
+      case (tr, (number, idx)) =>
         val td = document.createElement("td")
         td.setAttribute("id", s"cell_$idx")
-        if (cell == 0) {
+        if (number == 0) {
           td.append("")
         } else {
-          td.append(s"$cell")
+          td.append(s"$number")
         }
         td.addEventListener("click", { (_: dom.MouseEvent) =>
-          selectedCell.foreach { idx =>
-            val td = document.getElementById(s"cell_$idx")
-            td.setAttribute("style", "")
-          }
-          selectedCell = Some(idx)
-          td.setAttribute("style", "background-color: #e2e2e2;")
+          toggleCellSelection(idx)
         })
         tr.append(td)
 
@@ -122,8 +117,60 @@ object Main {
 
   }
 
-  private def drawNumbers(inGameState: InGameState): Unit = {
+  private def toggleCellSelection(idx: Int): Unit = {
+    selectedIdx.foreach { prevIdx =>
+      val td = document.getElementById(s"cell_$prevIdx")
+      val classStr = Option(td.getAttribute("class"))
+        .map(_.split(" ").toSet.removedAll(Seq("selected")).mkString(" "))
+        .getOrElse("")
+      td.setAttribute("class", classStr)
+    }
+    if (selectedIdx.isEmpty || selectedIdx.get != idx) {
+      selectedIdx = Some(idx)
+      val td = document.getElementById(s"cell_$idx")
+      val classStr = (Option(td.getAttribute("class"))
+        .map(_.split(" ").toSet)
+        .getOrElse(Set.empty) ++ Set("selected")
+        ).mkString(" ")
+      td.setAttribute("class", classStr)
+    } else {
+      selectedIdx = None
+    }
+  }
 
+  private def clearCell(td: Element): Unit = {
+    while (td.hasChildNodes()) {
+      td.removeChild(td.lastChild)
+    }
+  }
+
+  private def makeMove(inGameState: InGameState, idx: Int, number: Int): Unit = {
+    val td = document.getElementById(s"cell_$idx")
+    clearCell(td)
+    td.append(s"$number")
+    if (Grid.placeNumber(inGameState.grid.cells, idx, number)) {
+      td.setAttribute("class", "selected")
+    } else {
+      td.setAttribute("class", "selected error")
+    }
+  }
+
+  private def drawNumbers(inGameState: InGameState): Unit = {
+    (1 to 9).foreach { number =>
+      val btn = document.createElement("input")
+      btn.setAttribute("type", "button")
+      btn.setAttribute("value", s"$number")
+      btn.addEventListener("click", { (_: dom.MouseEvent) =>
+        selectedIdx match {
+          case Some(idx) =>
+            makeMove(inGameState, idx, number)
+          case None =>
+
+        }
+      })
+      document.body.appendChild(btn)
+    }
+    document.body.appendChild(document.createElement("br"))
   }
 
 }
