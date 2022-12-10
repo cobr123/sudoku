@@ -23,6 +23,7 @@ lazy val sudoku_scala = (project in file("./sudoku_scala"))
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core" % circeVersion,
       "io.circe" %%% "circe-generic" % circeVersion,
+      "io.circe" %%% "circe-generic-extras" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
       "com.beachape" %%% "enumeratum" % "1.7.0",
       "com.beachape" %%% "enumeratum-circe" % "1.7.0",

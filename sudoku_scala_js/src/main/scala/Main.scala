@@ -68,21 +68,25 @@ object Main {
 
   private def initAndDrawGameState(complexity: Complexity): Unit = {
     val state = InGameState(complexity)
-    window.localStorage.setItem(InGameState.STORAGE_KEY_NAME, InGameState.toJson(state))
+    saveGameState(state)
     drawInGameState(state)
+  }
+
+  private def saveGameState(inGameState: InGameState): Unit = {
+    println(InGameState.toJsonDebug(inGameState))
+    window.localStorage.setItem(InGameState.STORAGE_KEY_NAME, InGameState.toJson(inGameState))
   }
 
   private def drawInGameState(inGameState: InGameState): Unit = {
     clearScreen()
-    Grid.printGrid(inGameState.grid.cells)
     drawGameTable(inGameState)
     drawControls(inGameState)
     drawNumbers(inGameState)
   }
 
-  private var selectedIdx: Option[Int] = None
-
   private def drawGameTable(inGameState: InGameState): Unit = {
+    val errorIdxs = inGameState.moveHistory.filter(_.isError).map(_.idx).toSet
+    val lastMoveIdx = inGameState.moveHistory.lastOption.map(_.idx).getOrElse(-1)
     val table = document.createElement("table")
     val tr = document.createElement("tr")
     table.append(tr)
@@ -97,9 +101,16 @@ object Main {
           td.append(s"$number")
         }
         td.addEventListener("click", { (_: dom.MouseEvent) =>
-          toggleCellSelection(idx)
+          toggleCellSelection(inGameState, idx)
         })
         tr.append(td)
+        if (lastMoveIdx == idx && errorIdxs.contains(idx)) {
+          td.setAttribute("class", "selected error")
+        } else if (errorIdxs.contains(idx)) {
+          td.setAttribute("class", "error")
+        } else if (lastMoveIdx == idx) {
+          td.setAttribute("class", "selected")
+        }
 
         if ((idx + 1) % 9 == 0 && idx < inGameState.grid.cells.length) {
           val tr = document.createElement("tr")
@@ -113,28 +124,52 @@ object Main {
     document.body.appendChild(document.createElement("br"))
   }
 
-  private def drawControls(inGameState: InGameState): Unit = {
-
+  private def addUndoBtn(inGameState: InGameState): Unit = {
+    val btn = document.createElement("input")
+    btn.setAttribute("type", "button")
+    btn.setAttribute("value", "Undo")
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
+      undoMove(inGameState)
+    })
+    document.body.appendChild(btn)
   }
 
-  private def toggleCellSelection(idx: Int): Unit = {
-    selectedIdx.foreach { prevIdx =>
+  private def drawControls(inGameState: InGameState): Unit = {
+    // undo
+    addUndoBtn(inGameState)
+    // erase
+    // drawAllGhosts
+    // toggleGhostMode
+    // showHint
+    document.body.appendChild(document.createElement("br"))
+  }
+
+  private def markSelected(td: Element): Unit = {
+    val classStr = (Option(td.getAttribute("class"))
+      .map(_.split(" ").toSet)
+      .getOrElse(Set.empty) ++ Set("selected")
+      ).mkString(" ")
+    td.setAttribute("class", classStr)
+  }
+
+  private def unMarkSelected(td: Element): Unit = {
+    val classStr = Option(td.getAttribute("class"))
+      .map(_.split(" ").toSet.removedAll(Seq("selected")).mkString(" "))
+      .getOrElse("")
+    td.setAttribute("class", classStr)
+  }
+
+  private def toggleCellSelection(inGameState: InGameState, idx: Int): Unit = {
+    inGameState.selectedIdx.foreach { prevIdx =>
       val td = document.getElementById(s"cell_$prevIdx")
-      val classStr = Option(td.getAttribute("class"))
-        .map(_.split(" ").toSet.removedAll(Seq("selected")).mkString(" "))
-        .getOrElse("")
-      td.setAttribute("class", classStr)
+      unMarkSelected(td)
     }
-    if (selectedIdx.isEmpty || selectedIdx.get != idx) {
-      selectedIdx = Some(idx)
+    if (inGameState.selectedIdx.isEmpty || inGameState.selectedIdx.get != idx) {
+      inGameState.selectedIdx = Some(idx)
       val td = document.getElementById(s"cell_$idx")
-      val classStr = (Option(td.getAttribute("class"))
-        .map(_.split(" ").toSet)
-        .getOrElse(Set.empty) ++ Set("selected")
-        ).mkString(" ")
-      td.setAttribute("class", classStr)
+      markSelected(td)
     } else {
-      selectedIdx = None
+      inGameState.selectedIdx = None
     }
   }
 
@@ -148,11 +183,39 @@ object Main {
     val td = document.getElementById(s"cell_$idx")
     clearCell(td)
     td.append(s"$number")
-    if (Grid.placeNumber(inGameState.grid.cells, idx, number)) {
+    val isError = if (Grid.placeNumber(inGameState.grid.cells, idx, number)) {
       td.setAttribute("class", "selected")
+      false
     } else {
       td.setAttribute("class", "selected error")
+      true
     }
+    inGameState.moveHistory += Move(idx, isError, number)
+    saveGameState(inGameState)
+  }
+
+  private def undoMove(inGameState: InGameState): Unit = {
+    if (inGameState.moveHistory.nonEmpty) {
+      val lastMove = inGameState.moveHistory.last
+
+      inGameState.moveHistory.dropRightInPlace(1)
+      inGameState.grid.cells(lastMove.idx) = 0
+
+      val td = document.getElementById(s"cell_${lastMove.idx}")
+      clearCell(td)
+    }
+    if (inGameState.moveHistory.nonEmpty) {
+      val prevMove = inGameState.moveHistory.last
+      if (inGameState.selectedIdx.getOrElse(-1) == prevMove.idx) {
+        inGameState.grid.cells(prevMove.idx) = prevMove.number
+
+        val td = document.getElementById(s"cell_${prevMove.idx}")
+        td.append(s"${prevMove.number}")
+      } else {
+        toggleCellSelection(inGameState, prevMove.idx)
+      }
+    }
+    saveGameState(inGameState)
   }
 
   private def drawNumbers(inGameState: InGameState): Unit = {
@@ -161,7 +224,7 @@ object Main {
       btn.setAttribute("type", "button")
       btn.setAttribute("value", s"$number")
       btn.addEventListener("click", { (_: dom.MouseEvent) =>
-        selectedIdx match {
+        inGameState.selectedIdx match {
           case Some(idx) =>
             makeMove(inGameState, idx, number)
           case None =>
