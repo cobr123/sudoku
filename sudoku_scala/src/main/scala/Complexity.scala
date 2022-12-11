@@ -1,21 +1,25 @@
-import enumeratum._
+
+import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
 import scala.util.Random
 
-sealed abstract class Complexity(val solvedCellCount: Int) extends EnumEntry
+enum Complexity(val solvedCellCount: Int) {
 
-object Complexity extends Enum[Complexity] with CirceEnum[Complexity] {
-  val values = findValues
+  case Easy extends Complexity(50)
 
-  case object Easy extends Complexity(50)
+  case Medium extends Complexity(38)
 
-  case object Medium extends Complexity(38)
+  case Hard extends Complexity(28)
 
-  case object Hard extends Complexity(28)
+  case Expert extends Complexity(22)
 
-  case object Expert extends Complexity(22)
+  case Extreme extends Complexity(17)
+}
 
-  case object Extreme extends Complexity(17)
+object Complexity {
+
+  implicit val codec: JsonValueCodec[Complexity] = JsonCodecMaker.makeWithoutDiscriminator
 
   def changeSolvedGridByComplexity(grid: Grid, complexity: Complexity): Grid = {
     assert(Grid.isFinished(grid.cells))

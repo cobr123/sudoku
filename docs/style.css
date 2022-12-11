@@ -1,25 +1,38 @@
 
+table.guess {
+  width: 100%;
+  height: 100%;
+}
+
+td.guess {
+  font-size: 50%;
+  border: 0px;
+  text-align: center;
+  width: 1em;
+  height: 1em;
+}
+
 td {
   border: 1px solid #ddd;
   text-align: center;
-  width: 2em;
-  height: 2em;
+  width: 2.8em;
+  height: 2.8em;
 }
 
 td.selected {
   border: 1px solid #ddd;
   background-color: #e2e2e2;
   text-align: center;
-  width: 2em;
-  height: 2em;
+  width: 2.8em;
+  height: 2.8em;
 }
 
 td.error {
   border: 1px solid #ddd;
   color: red;
   text-align: center;
-  width: 2em;
-  height: 2em;
+  width: 2.8em;
+  height: 2.8em;
 }
 
 input[type=button] {

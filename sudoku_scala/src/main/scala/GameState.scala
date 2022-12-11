@@ -1,11 +1,8 @@
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.deriveEncoder
-import io.circe.parser.decode
-import io.circe.syntax.EncoderOps
+import com.github.plokhotnyuk.jsoniter_scala.core.{JsonValueCodec, readFromString, writeToString}
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 sealed trait GameState
 
@@ -14,16 +11,15 @@ case object InMenuState extends GameState
 final case class InGameState(grid: Grid,
                              complexity: Complexity,
                              var selectedIdx: Option[Int] = None,
+                             var ghostMode: Boolean = false,
                              moveHistory: mutable.ArrayBuffer[Move] = mutable.ArrayBuffer.empty,
+                             guesses: mutable.HashMap[Int, Set[Int]] = mutable.HashMap.empty,
                             ) extends GameState
 
 object InGameState {
   val STORAGE_KEY_NAME = "GAME_STATE"
 
-  implicit val config: Configuration = Configuration.default.withDefaults
-
-  implicit val decoder: Decoder[InGameState] = deriveConfiguredDecoder
-  implicit val encoder: Encoder[InGameState] = deriveEncoder
+  implicit val codec: JsonValueCodec[InGameState] = JsonCodecMaker.make
 
   def apply(complexity: Complexity): InGameState = {
     val grid = Complexity.changeSolvedGridByComplexity(Grid.solve(Grid().cells), complexity)
@@ -31,19 +27,19 @@ object InGameState {
   }
 
   def apply(json: String): Option[InGameState] = {
-    decode[InGameState](json) match {
-      case Left(ex) =>
+    Try(readFromString[InGameState](json)) match {
+      case Failure(ex) =>
         ex.printStackTrace()
         None
-      case Right(gameState) => Some(gameState)
+      case Success(gameState) => Some(gameState)
     }
   }
 
   def toJson(state: InGameState): String = {
-    state.asJson.noSpaces
+    writeToString(state)
   }
 
   def toJsonDebug(state: InGameState): String = {
-    state.asJson.spaces2SortKeys
+    writeToString(state)
   }
 }

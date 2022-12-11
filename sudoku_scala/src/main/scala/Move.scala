@@ -1,9 +1,7 @@
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
-case class Move(idx: Int, isError: Boolean, number: Int)
 
-object Move {
-  implicit val decoder: Decoder[Move] = deriveDecoder
-  implicit val encoder: Encoder[Move] = deriveEncoder
-}
+sealed trait Move(val idx: Int)
+
+final case class RealMove(override val idx: Int, isError: Boolean, number: Int) extends Move(idx)
+
+final case class GhostMove(override val idx: Int, guesses: Set[Int]) extends Move(idx)

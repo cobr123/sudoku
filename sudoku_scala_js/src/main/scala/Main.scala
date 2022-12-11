@@ -31,7 +31,7 @@ object Main {
   private def addContinueBtn(inGameState: InGameState): Unit = {
     val btn = document.createElement("input")
     btn.setAttribute("type", "button")
-    btn.setAttribute("value", s"Continue: ${inGameState.complexity.entryName}")
+    btn.setAttribute("value", s"Continue: ${inGameState.complexity.toString}")
     btn.addEventListener("click", { (_: dom.MouseEvent) =>
       drawInGameState(inGameState)
     })
@@ -55,7 +55,7 @@ object Main {
     Complexity.values.foreach { complexity =>
       val btn = document.createElement("input")
       btn.setAttribute("type", "button")
-      btn.setAttribute("value", complexity.entryName)
+      btn.setAttribute("value", complexity.toString)
       btn.addEventListener("click", { (_: dom.MouseEvent) =>
         btn.setAttribute("value", s"${btn.getAttribute("value")}. Loading...")
         btn.setAttribute("disabled", "true")
@@ -85,7 +85,10 @@ object Main {
   }
 
   private def drawGameTable(inGameState: InGameState): Unit = {
-    val errorIdxs = inGameState.moveHistory.filter(_.isError).map(_.idx).toSet
+    val errorIdxs = inGameState.moveHistory.filter {
+      case RealMove(_, isError, _) => isError
+      case _ => false
+    }.map(_.idx).toSet
     val lastMoveIdx = inGameState.moveHistory.lastOption.map(_.idx).getOrElse(-1)
     val table = document.createElement("table")
     val tr = document.createElement("tr")
@@ -95,7 +98,10 @@ object Main {
       case (tr, (number, idx)) =>
         val td = document.createElement("td")
         td.setAttribute("id", s"cell_$idx")
-        if (number == 0) {
+        val guesses = inGameState.guesses.get(idx)
+        if (guesses.isDefined) {
+          addGhostTable(td, guesses.get)
+        } else if (number == 0) {
           td.append("")
         } else {
           td.append(s"$number")
@@ -134,12 +140,31 @@ object Main {
     document.body.appendChild(btn)
   }
 
+  private def addToggleGhostModeBtn(inGameState: InGameState): Unit = {
+    val cb = document.createElement("input")
+    cb.setAttribute("type", "checkbox")
+    if (inGameState.ghostMode) {
+      cb.setAttribute("checked", "true")
+    }
+    cb.id = "toggleGhostModeCheckbox"
+    cb.addEventListener("change", { (_: dom.MouseEvent) =>
+      inGameState.ghostMode = !inGameState.ghostMode
+      saveGameState(inGameState)
+    })
+    val label = document.createElement("label")
+    label.innerText = "Ghost mode"
+    label.setAttribute("for", cb.id)
+    document.body.appendChild(label)
+    document.body.appendChild(cb)
+  }
+
   private def drawControls(inGameState: InGameState): Unit = {
     // undo
     addUndoBtn(inGameState)
     // erase
     // drawAllGhosts
     // toggleGhostMode
+    addToggleGhostModeBtn(inGameState)
     // showHint
     document.body.appendChild(document.createElement("br"))
   }
@@ -190,7 +215,40 @@ object Main {
       td.setAttribute("class", "selected error")
       true
     }
-    inGameState.moveHistory += Move(idx, isError, number)
+    inGameState.moveHistory += RealMove(idx, isError, number)
+    inGameState.guesses.remove(idx)
+    saveGameState(inGameState)
+  }
+
+  private def addGhostTable(td: Element, guesses: Set[Int]): Unit = {
+    val table = document.createElement("table")
+    table.setAttribute("class", "guess")
+    for (row <- 0 to 2) {
+      val tr = document.createElement("tr")
+      for (col <- 0 to 2) {
+        val td = document.createElement("td")
+        td.setAttribute("class", "guess")
+        val guessIdx = row * 3 + col
+        val number = guessIdx + 1
+        if (guesses.contains(number)) {
+          td.append(s"$number")
+        }
+        tr.append(td)
+      }
+      table.append(tr)
+    }
+    clearCell(td)
+    td.append(table)
+  }
+
+  private def makeGhostMove(inGameState: InGameState, idx: Int, number: Int): Unit = {
+    val newGuesses = inGameState.guesses.getOrElse(idx, Set.empty) ++ Set(number)
+    inGameState.guesses += (idx -> newGuesses)
+    inGameState.moveHistory += GhostMove(idx, inGameState.guesses(idx))
+
+    val td = document.getElementById(s"cell_$idx")
+    addGhostTable(td, newGuesses)
+
     saveGameState(inGameState)
   }
 
@@ -207,10 +265,18 @@ object Main {
     if (inGameState.moveHistory.nonEmpty) {
       val prevMove = inGameState.moveHistory.last
       if (inGameState.selectedIdx.getOrElse(-1) == prevMove.idx) {
-        inGameState.grid.cells(prevMove.idx) = prevMove.number
+        prevMove match {
+          case RealMove(idx, _, number) =>
+            inGameState.grid.cells(idx) = number
 
-        val td = document.getElementById(s"cell_${prevMove.idx}")
-        td.append(s"${prevMove.number}")
+            val td = document.getElementById(s"cell_$idx")
+            td.append(s"$number")
+          case GhostMove(idx, guesses) =>
+            inGameState.guesses += (idx -> guesses)
+
+            val td = document.getElementById(s"cell_$idx")
+            addGhostTable(td, guesses)
+        }
       } else {
         toggleCellSelection(inGameState, prevMove.idx)
       }
@@ -226,7 +292,11 @@ object Main {
       btn.addEventListener("click", { (_: dom.MouseEvent) =>
         inGameState.selectedIdx match {
           case Some(idx) =>
-            makeMove(inGameState, idx, number)
+            if (inGameState.ghostMode) {
+              makeGhostMove(inGameState, idx, number)
+            } else {
+              makeMove(inGameState, idx, number)
+            }
           case None =>
 
         }

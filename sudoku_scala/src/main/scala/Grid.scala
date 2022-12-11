@@ -1,5 +1,3 @@
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 import scala.annotation.tailrec
 import scala.util.Random
@@ -9,9 +7,6 @@ final case class Grid(cells: Array[Int]) {
 }
 
 object Grid {
-
-  implicit val decoder: Decoder[Grid] = deriveDecoder
-  implicit val encoder: Encoder[Grid] = deriveEncoder
 
   def apply(subGrids: SubGrid*): Grid = {
     val rows = List(0, 3, 6).flatMap { i =>
