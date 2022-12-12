@@ -73,7 +73,9 @@ object Main {
   }
 
   private def saveGameState(inGameState: InGameState): Unit = {
-    println(InGameState.toJsonDebug(inGameState))
+    if (window.location.host.contains("localhost")) {
+      println(InGameState.toJsonDebug(inGameState))
+    }
     window.localStorage.setItem(InGameState.STORAGE_KEY_NAME, InGameState.toJson(inGameState))
   }
 
@@ -111,11 +113,12 @@ object Main {
         })
         tr.append(td)
         if (lastMoveIdx == idx && errorIdxs.contains(idx)) {
-          td.setAttribute("class", "selected error")
+          markSelected(td)
+          markError(td)
         } else if (errorIdxs.contains(idx)) {
-          td.setAttribute("class", "error")
+          markError(td)
         } else if (lastMoveIdx == idx) {
-          td.setAttribute("class", "selected")
+          markSelected(td)
         }
 
         if ((idx + 1) % 9 == 0 && idx < inGameState.grid.cells.length) {
@@ -169,19 +172,39 @@ object Main {
     document.body.appendChild(document.createElement("br"))
   }
 
-  private def markSelected(td: Element): Unit = {
+  private def addClass(td: Element, classNames: Set[String]): Unit = {
     val classStr = (Option(td.getAttribute("class"))
       .map(_.split(" ").toSet)
-      .getOrElse(Set.empty) ++ Set("selected")
+      .getOrElse(Set.empty) ++ classNames
       ).mkString(" ")
     td.setAttribute("class", classStr)
   }
 
-  private def unMarkSelected(td: Element): Unit = {
+  private def removeClass(td: Element, classNames: Set[String]): Unit = {
     val classStr = Option(td.getAttribute("class"))
-      .map(_.split(" ").toSet.removedAll(Seq("selected")).mkString(" "))
+      .map(_.split(" ").toSet.removedAll(classNames).mkString(" "))
       .getOrElse("")
     td.setAttribute("class", classStr)
+  }
+
+  private def markSelected(td: Element, replaceAll: Boolean = false): Unit = {
+    if (replaceAll) {
+      td.setAttribute("class", "selected")
+    } else {
+      addClass(td, Set("selected"))
+    }
+  }
+
+  private def unMarkSelected(td: Element): Unit = {
+    removeClass(td, Set("selected"))
+  }
+
+  private def markError(td: Element): Unit = {
+    addClass(td, Set("error"))
+  }
+
+  private def unMarkError(td: Element): Unit = {
+    removeClass(td, Set("error"))
   }
 
   private def toggleCellSelection(inGameState: InGameState, idx: Int): Unit = {
@@ -205,19 +228,25 @@ object Main {
   }
 
   private def makeMove(inGameState: InGameState, idx: Int, number: Int): Unit = {
-    val td = document.getElementById(s"cell_$idx")
-    clearCell(td)
-    td.append(s"$number")
-    val isError = if (Grid.placeNumber(inGameState.grid.cells, idx, number)) {
-      td.setAttribute("class", "selected")
-      false
-    } else {
-      td.setAttribute("class", "selected error")
-      true
+    val isSameMove = inGameState.moveHistory.lastOption.exists {
+      case RealMove(lastMoveIdx, _, lastMoveNumber) if lastMoveIdx == idx && lastMoveNumber == number => true
+      case _ => false
     }
-    inGameState.moveHistory += RealMove(idx, isError, number)
-    inGameState.guesses.remove(idx)
-    saveGameState(inGameState)
+    if (!isSameMove) {
+      val td = document.getElementById(s"cell_$idx")
+      clearCell(td)
+      td.append(s"$number")
+      val isError = if (Grid.placeNumber(inGameState.grid.cells, idx, number)) {
+        unMarkError(td)
+        false
+      } else {
+        markError(td)
+        true
+      }
+      inGameState.moveHistory += RealMove(idx, isError, number)
+      inGameState.guesses.remove(idx)
+      saveGameState(inGameState)
+    }
   }
 
   private def addGhostTable(td: Element, guesses: Set[Int]): Unit = {
@@ -242,14 +271,20 @@ object Main {
   }
 
   private def makeGhostMove(inGameState: InGameState, idx: Int, number: Int): Unit = {
-    val newGuesses = inGameState.guesses.getOrElse(idx, Set.empty) ++ Set(number)
-    inGameState.guesses += (idx -> newGuesses)
-    inGameState.moveHistory += GhostMove(idx, inGameState.guesses(idx))
+    val isSameMove = inGameState.moveHistory.lastOption.exists {
+      case GhostMove(lastMoveIdx, lastMoveGuesses) if lastMoveIdx == idx && lastMoveGuesses.contains(number) => true
+      case _ => false
+    }
+    if (!isSameMove) {
+      val newGuesses = inGameState.guesses.getOrElse(idx, Set.empty) ++ Set(number)
+      inGameState.guesses += (idx -> newGuesses)
+      inGameState.moveHistory += GhostMove(idx, inGameState.guesses(idx))
 
-    val td = document.getElementById(s"cell_$idx")
-    addGhostTable(td, newGuesses)
+      val td = document.getElementById(s"cell_$idx")
+      addGhostTable(td, newGuesses)
 
-    saveGameState(inGameState)
+      saveGameState(inGameState)
+    }
   }
 
   private def undoMove(inGameState: InGameState): Unit = {
@@ -266,11 +301,16 @@ object Main {
       val prevMove = inGameState.moveHistory.last
       if (inGameState.selectedIdx.getOrElse(-1) == prevMove.idx) {
         prevMove match {
-          case RealMove(idx, _, number) =>
+          case RealMove(idx, isError, number) =>
             inGameState.grid.cells(idx) = number
 
             val td = document.getElementById(s"cell_$idx")
             td.append(s"$number")
+            if (isError) {
+              markError(td)
+            } else {
+              unMarkError(td)
+            }
           case GhostMove(idx, guesses) =>
             inGameState.guesses += (idx -> guesses)
 
