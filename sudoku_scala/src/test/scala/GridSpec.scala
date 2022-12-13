@@ -204,8 +204,8 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
 
   it("placeNumber on empty grid") {
     val grid = Grid()
-    val isError = Grid.placeNumber(grid.cells, 0, 1)
-    assert(isError === false)
+    val canPlace1 = Grid.placeNumber(grid.cells, 0, 1)
+    assert(canPlace1 === true)
   }
 
   it("placeNumber on empty row") {
@@ -219,10 +219,10 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     val r8 = Row(2, 8, 7, 4, 1, 9, 6, 3, 5)
     val r9 = Row(3, 4, 5, 2, 8, 6, 1, 7, 9)
     val grid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
-    val isError1 = Grid.placeNumber(grid.cells, 0, 1)
-    assert(isError1 === true)
-    val isError5 = Grid.placeNumber(grid.cells, 0, 5)
-    assert(isError5 === false)
+    val canPlace1 = Grid.placeNumber(grid.cells, 0, 1)
+    assert(canPlace1 === false)
+    val canPlace5 = Grid.placeNumber(grid.cells, 0, 5)
+    assert(canPlace5 === true)
   }
 
   it("placeNumber on empty col") {
@@ -236,10 +236,10 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     val r8 = Row(0, 8, 7, 4, 1, 9, 6, 3, 5)
     val r9 = Row(0, 4, 5, 2, 8, 6, 1, 7, 9)
     val grid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
-    val isError1 = Grid.placeNumber(grid.cells, 0, 1)
-    assert(isError1 === true)
-    val isError5 = Grid.placeNumber(grid.cells, 0, 5)
-    assert(isError5 === false)
+    val canPlace1 = Grid.placeNumber(grid.cells, 0, 1)
+    assert(canPlace1 === false)
+    val canPlace5 = Grid.placeNumber(grid.cells, 0, 5)
+    assert(canPlace5 === true)
   }
 
 }

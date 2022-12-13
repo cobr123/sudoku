@@ -126,9 +126,9 @@ object Grid {
   }
 
   def placeNumber(cells: Array[Int], idx: Int, number: Int): Boolean = {
-    val isError = !getGuesses(cells, idx).contains(number)
+    val canPlace = getGuesses(cells, idx).contains(number)
     cells(idx) = number
-    isError
+    canPlace
   }
 
   def getGuesses(cells: Array[Int], idx: Int): Set[Int] = {
