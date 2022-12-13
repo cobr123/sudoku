@@ -25,6 +25,7 @@ object Grid {
 
   private val colIndexes: Array[Int] = (0 until 9).toArray
   private val rowIndexes: Array[Int] = (0 until 9).toArray
+  private val gridIndexes: Array[Int] = (0 until 9 * 9).toArray
   private val subGridIndexes: Array[Int] = (0 until 3).toArray
 
   def isFinished(cells: Array[Int]): Boolean = {
@@ -33,25 +34,42 @@ object Grid {
       subGridIndexes.map(getSubGrid(cells)).forall(SubGrid.isCorrect)
   }
 
-  def getSubGrid(cells: Array[Int])(subGridIdx: Int): Array[Int] = {
+  def getSubGridRowAndColumn(subGridIdx: Int): (Int, Int) = {
     val numberOfColumns = 3
     val column = subGridIdx % numberOfColumns
     val row = (subGridIdx - column) / numberOfColumns
+    (row, column)
+  }
+
+  def getSubGridIdxs(subGridIdx: Int): Array[Int] = {
+    val (row, column) = getSubGridRowAndColumn(subGridIdx)
 
     val idx = (row * 9 + column) * 3
-    cells.slice(idx, idx + 3) ++
-      cells.slice(idx + 9, idx + 9 + 3) ++
-      cells.slice(idx + 9 + 9, idx + 9 + 9 + 3)
+    gridIndexes.slice(idx, idx + 3) ++
+      gridIndexes.slice(idx + 9, idx + 9 + 3) ++
+      gridIndexes.slice(idx + 9 + 9, idx + 9 + 9 + 3)
+  }
+
+  def getSubGrid(cells: Array[Int])(subGridIdx: Int): Array[Int] = {
+    getSubGridIdxs(subGridIdx).map(idx => cells(idx))
+  }
+
+  def getColIdxs(col: Int): Array[Int] = {
+    gridIndexes.sliding(9, 9).map(_.apply(col)).toArray
   }
 
   def getCol(cells: Array[Int])(col: Int): Array[Int] = {
-    cells.sliding(9, 9).map(_.apply(col)).toArray
+    getColIdxs(col).map(idx => cells(idx))
+  }
+
+  def getRowIdxs(row: Int): Array[Int] = {
+    val from = row * 9
+    val until = from + 9
+    (from until until).toArray
   }
 
   def getRow(cells: Array[Int])(row: Int): Array[Int] = {
-    val from = row * 9
-    val until = from + 9
-    cells.slice(from, until)
+    getRowIdxs(row).map(idx => cells(idx))
   }
 
   private def updateByIdx(arr: Array[Int], idx: Int, available: Array[Int]): Boolean = {
@@ -63,7 +81,7 @@ object Grid {
     }
   }
 
-  private def getSubGridIdx(gridRow: Int, gridCol: Int): Int = {
+  def getSubGridIdx(gridRow: Int, gridCol: Int): Int = {
     val idx = (gridRow, gridCol) match {
       case (row, col) if row >= 0 && row < 3 && col >= 0 && col < 3 => 0
       case (row, col) if row >= 0 && row < 3 && col >= 3 && col < 6 => 1
@@ -86,9 +104,7 @@ object Grid {
   private def trySolveRandom(gridCells: Array[Int], idx: Int = 0): Array[Int] = {
     if (idx < gridCells.length) {
       if (gridCells(idx) == 0) {
-        val numberOfColumns = 9
-        val column = idx % numberOfColumns
-        val row = (idx - column) / numberOfColumns
+        val (row, column) = getRowAndColumn(idx)
         val subGridIdx = getSubGridIdx(row, column)
         val newFilter = availableValues.removedAll(
           getCol(gridCells)(column) ++
@@ -131,11 +147,15 @@ object Grid {
     canPlace
   }
 
-  def getGuesses(cells: Array[Int], idx: Int): Set[Int] = {
+  def getRowAndColumn(idx: Int): (Int, Int) = {
     val numberOfColumns = 9
     val column = idx % numberOfColumns
     val row = (idx - column) / numberOfColumns
+    (row, column)
+  }
 
+  def getGuesses(cells: Array[Int], idx: Int): Set[Int] = {
+    val (row, column) = getRowAndColumn(idx)
     availableValues -- getRow(cells)(row) -- getCol(cells)(column) -- getSubGrid(cells)(getSubGridIdx(row, column))
   }
 }

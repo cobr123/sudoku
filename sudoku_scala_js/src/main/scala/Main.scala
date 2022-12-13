@@ -281,6 +281,14 @@ object Main {
       }
       val isError = if (number == 0 || Grid.placeNumber(inGameState.grid.cells, idx, number)) {
         unMarkError(td)
+        val (row, column) = Grid.getRowAndColumn(idx)
+        (Grid.getRowIdxs(row) ++ Grid.getColIdxs(column) ++ Grid.getSubGridIdxs(Grid.getSubGridIdx(row, column)))
+          .distinct
+          .filter(subIdx => subIdx != idx && inGameState.guesses.get(subIdx).exists(_.contains(number)))
+          .foreach { idx =>
+            val newGuesses = inGameState.guesses(idx).removedAll(Seq(number))
+            drawBatchGhostMoves(inGameState, Array((idx, newGuesses)))
+          }
         false
       } else {
         markError(td)
