@@ -143,6 +143,20 @@ object Main {
     document.body.appendChild(btn)
   }
 
+  private def addEraseBtn(inGameState: InGameState): Unit = {
+    val btn = document.createElement("input")
+    btn.setAttribute("type", "button")
+    btn.setAttribute("value", "Erase")
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
+      inGameState.selectedIdx.foreach { idx =>
+        if (inGameState.grid.cells(idx) != 0 || inGameState.guesses.contains(idx)) {
+          makeMove(inGameState, idx, 0)
+        }
+      }
+    })
+    document.body.appendChild(btn)
+  }
+
   private def addToggleGhostModeBtn(inGameState: InGameState): Unit = {
     val cb = document.createElement("input")
     cb.setAttribute("type", "checkbox")
@@ -165,6 +179,7 @@ object Main {
     // undo
     addUndoBtn(inGameState)
     // erase
+    addEraseBtn(inGameState)
     // drawAllGhosts
     // toggleGhostMode
     addToggleGhostModeBtn(inGameState)
@@ -172,19 +187,22 @@ object Main {
     document.body.appendChild(document.createElement("br"))
   }
 
+  private def editClass(td: Element)(f: Set[String] => Set[String]): Unit = {
+    val oldClasses = Option(td.getAttribute("class")).map(_.split(" ").toSet).getOrElse(Set.empty)
+    val newClasses = f(oldClasses)
+    td.setAttribute("class", newClasses.mkString(" "))
+  }
+
   private def addClass(td: Element, classNames: Set[String]): Unit = {
-    val classStr = (Option(td.getAttribute("class"))
-      .map(_.split(" ").toSet)
-      .getOrElse(Set.empty) ++ classNames
-      ).mkString(" ")
-    td.setAttribute("class", classStr)
+    editClass(td) { oldClasses =>
+      oldClasses ++ classNames
+    }
   }
 
   private def removeClass(td: Element, classNames: Set[String]): Unit = {
-    val classStr = Option(td.getAttribute("class"))
-      .map(_.split(" ").toSet.removedAll(classNames).mkString(" "))
-      .getOrElse("")
-    td.setAttribute("class", classStr)
+    editClass(td) { oldClasses =>
+      oldClasses -- classNames
+    }
   }
 
   private def markSelected(td: Element, replaceAll: Boolean = false): Unit = {
@@ -235,8 +253,10 @@ object Main {
     if (!isSameMove) {
       val td = document.getElementById(s"cell_$idx")
       clearCell(td)
-      td.append(s"$number")
-      val isError = if (Grid.placeNumber(inGameState.grid.cells, idx, number)) {
+      if (number > 0) {
+        td.append(s"$number")
+      }
+      val isError = if (number == 0 || Grid.placeNumber(inGameState.grid.cells, idx, number)) {
         unMarkError(td)
         false
       } else {
