@@ -129,4 +129,8 @@ object Grid {
     cells(idx) = number
     Random.nextBoolean()
   }
+
+  def getGuesses(cells: Array[Int], idx: Int): Set[Int] = {
+    Set.empty
+  }
 }

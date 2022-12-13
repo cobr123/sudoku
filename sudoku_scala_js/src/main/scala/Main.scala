@@ -87,11 +87,15 @@ object Main {
   }
 
   private def drawGameTable(inGameState: InGameState): Unit = {
-    val errorIdxs = inGameState.moveHistory.filter {
-      case RealMove(_, isError, _) => isError
-      case _ => false
-    }.map(_.idx).toSet
-    val lastMoveIdx = inGameState.moveHistory.lastOption.map(_.idx).getOrElse(-1)
+    val errorIdxs = inGameState.moveHistory.flatMap {
+      case RealMove(idx, isError, _) if isError => Set(idx)
+      case _ => Set.empty
+    }
+    val lastMoveIdx = inGameState.moveHistory.lastOption.map {
+      case RealMove(idx, _, _) => idx
+      case GhostMove(idx, _) => idx
+      case _ => -1
+    }.getOrElse(-1)
     val table = document.createElement("table")
     val tr = document.createElement("tr")
     table.append(tr)
@@ -157,6 +161,28 @@ object Main {
     document.body.appendChild(btn)
   }
 
+  private def addDrawAllGhostsBtn(inGameState: InGameState): Unit = {
+    val btn = document.createElement("input")
+    btn.setAttribute("type", "button")
+    btn.setAttribute("value", "Draw all ghosts")
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
+      drawAllGhosts(inGameState)
+    })
+    document.body.appendChild(btn)
+  }
+
+  private def drawAllGhosts(inGameState: InGameState): Unit = {
+    val batchGhostMoves = inGameState.grid.cells.zipWithIndex.filter(_._1 == 0).map {
+      case (_, idx) =>
+        val oldGuesses = inGameState.guesses.getOrElse(idx, Set.empty)
+        val newGuesses = Grid.getGuesses(inGameState.grid.cells, idx)
+        drawBatchGhostMoves(inGameState, Array((idx, newGuesses)))
+        BatchGhostMove(idx, oldGuesses, newGuesses)
+    }
+    inGameState.moveHistory += BatchAllGhostMoves(batchGhostMoves)
+    saveGameState(inGameState)
+  }
+
   private def addToggleGhostModeBtn(inGameState: InGameState): Unit = {
     val cb = document.createElement("input")
     cb.setAttribute("type", "checkbox")
@@ -176,14 +202,11 @@ object Main {
   }
 
   private def drawControls(inGameState: InGameState): Unit = {
-    // undo
     addUndoBtn(inGameState)
-    // erase
     addEraseBtn(inGameState)
-    // drawAllGhosts
-    // toggleGhostMode
+    addDrawAllGhostsBtn(inGameState)
     addToggleGhostModeBtn(inGameState)
-    // showHint
+    // TODO: showHint
     document.body.appendChild(document.createElement("br"))
   }
 
@@ -307,41 +330,79 @@ object Main {
     }
   }
 
+  private def clearGridCell(inGameState: InGameState, idx: Int): Unit = {
+    inGameState.grid.cells(idx) = 0
+
+    val td = document.getElementById(s"cell_${idx}")
+    clearCell(td)
+  }
+
   private def undoMove(inGameState: InGameState): Unit = {
     if (inGameState.moveHistory.nonEmpty) {
       val lastMove = inGameState.moveHistory.last
 
       inGameState.moveHistory.dropRightInPlace(1)
-      inGameState.grid.cells(lastMove.idx) = 0
 
-      val td = document.getElementById(s"cell_${lastMove.idx}")
-      clearCell(td)
+      lastMove match {
+        case RealMove(idx, _, _) =>
+          clearGridCell(inGameState, idx)
+        case GhostMove(idx, _) =>
+          clearGridCell(inGameState, idx)
+        case BatchAllGhostMoves(batchGhostMoves) =>
+          val oldGhostMoves = batchGhostMoves.map(m => (m.idx, m.oldGuesses))
+          drawBatchGhostMoves(inGameState, oldGhostMoves)
+      }
     }
     if (inGameState.moveHistory.nonEmpty) {
       val prevMove = inGameState.moveHistory.last
-      if (inGameState.selectedIdx.getOrElse(-1) == prevMove.idx) {
-        prevMove match {
-          case RealMove(idx, isError, number) =>
+      prevMove match {
+        case RealMove(idx, isError, number) =>
+          if (inGameState.selectedIdx.getOrElse(-1) == idx) {
             inGameState.grid.cells(idx) = number
 
             val td = document.getElementById(s"cell_$idx")
+            clearCell(td)
             td.append(s"$number")
             if (isError) {
               markError(td)
             } else {
               unMarkError(td)
             }
-          case GhostMove(idx, guesses) =>
+          } else {
+            toggleCellSelection(inGameState, idx)
+          }
+        case GhostMove(idx, guesses) =>
+          if (inGameState.selectedIdx.getOrElse(-1) == idx) {
             inGameState.guesses += (idx -> guesses)
 
             val td = document.getElementById(s"cell_$idx")
             addGhostTable(td, guesses)
-        }
-      } else {
-        toggleCellSelection(inGameState, prevMove.idx)
+          } else {
+            toggleCellSelection(inGameState, idx)
+          }
+        case BatchAllGhostMoves(batchGhostMoves) =>
+          val newGhostMoves = batchGhostMoves.map(m => (m.idx, m.newGuesses))
+          drawBatchGhostMoves(inGameState, newGhostMoves)
       }
     }
     saveGameState(inGameState)
+  }
+
+  private def drawBatchGhostMoves(inGameState: InGameState, ghostMoves: Array[(Int, Set[Int])]): Unit = {
+    ghostMoves.foreach {
+      case (idx, guesses) =>
+        if (guesses.isEmpty) {
+          inGameState.guesses.remove(idx)
+
+          val td = document.getElementById(s"cell_$idx")
+          clearCell(td)
+        } else {
+          inGameState.guesses += (idx -> guesses)
+
+          val td = document.getElementById(s"cell_$idx")
+          addGhostTable(td, guesses)
+        }
+    }
   }
 
   private def drawNumbers(inGameState: InGameState): Unit = {

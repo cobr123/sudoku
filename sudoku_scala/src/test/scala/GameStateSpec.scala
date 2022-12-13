@@ -1,5 +1,5 @@
-import io.circe.syntax.EncoderOps
 import org.scalatest.funspec.AnyFunSpec
+import com.github.plokhotnyuk.jsoniter_scala.core.writeToString
 
 class GameStateSpec extends AnyFunSpec {
 
@@ -20,8 +20,8 @@ class GameStateSpec extends AnyFunSpec {
 
   it("encode and decode InGameState") {
     val inGameState = InGameState(getSolvedGrid, Complexity.Easy)
-    val state = InGameState(inGameState.asJson.noSpaces)
-    println(inGameState.asJson.noSpaces)
+    val state = InGameState(writeToString(inGameState))
+    println(writeToString(inGameState))
     assert(Some(inGameState) === state)
   }
 
