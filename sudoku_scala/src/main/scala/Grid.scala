@@ -80,7 +80,7 @@ object Grid {
     idx
   }
 
-  val availableValues = (1 to 9).toSet
+  val availableValues: Set[Int] = (1 to 9).toSet
 
   @tailrec
   private def trySolveRandom(gridCells: Array[Int], idx: Int = 0): Array[Int] = {
@@ -126,8 +126,9 @@ object Grid {
   }
 
   def placeNumber(cells: Array[Int], idx: Int, number: Int): Boolean = {
+    val isError = !getGuesses(cells, idx).contains(number)
     cells(idx) = number
-    Random.nextBoolean()
+    isError
   }
 
   def getGuesses(cells: Array[Int], idx: Int): Set[Int] = {
