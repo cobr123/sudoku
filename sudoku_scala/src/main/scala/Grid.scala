@@ -80,7 +80,7 @@ object Grid {
     idx
   }
 
-  private val availableValues = (1 to 9).toSet
+  val availableValues = (1 to 9).toSet
 
   @tailrec
   private def trySolveRandom(gridCells: Array[Int], idx: Int = 0): Array[Int] = {
@@ -131,6 +131,10 @@ object Grid {
   }
 
   def getGuesses(cells: Array[Int], idx: Int): Set[Int] = {
-    Set.empty
+    val numberOfColumns = 9
+    val column = idx % numberOfColumns
+    val row = (idx - column) / numberOfColumns
+
+    availableValues -- getRow(cells)(row) -- getCol(cells)(column) -- getSubGrid(cells)(getSubGridIdx(row, column))
   }
 }
