@@ -36,6 +36,7 @@ td.error {
 }
 
 input[type=button] {
+  height: 2em;
   padding-left: 7px;
   padding-right: 7px;
   padding-top: 2px;

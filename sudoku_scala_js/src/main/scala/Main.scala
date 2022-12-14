@@ -79,6 +79,16 @@ object Main {
     window.localStorage.setItem(InGameState.STORAGE_KEY_NAME, InGameState.toJson(inGameState))
   }
 
+  private def congratulateIfFinished(inGameState: InGameState): Unit = {
+    if (Grid.isFinished(inGameState.grid.cells)) {
+      window.setTimeout(() => {
+        window.alert("Congratulations!")
+        window.localStorage.removeItem(InGameState.STORAGE_KEY_NAME)
+        drawInMenuState()
+      }, 500)
+    }
+  }
+
   private def drawInGameState(inGameState: InGameState): Unit = {
     clearScreen()
     drawGameTable(inGameState)
@@ -171,6 +181,33 @@ object Main {
     document.body.appendChild(btn)
   }
 
+  private def addAutofillBtn(inGameState: InGameState): Unit = {
+    val btn = document.createElement("input")
+    btn.setAttribute("id", "autofill_btn")
+    btn.setAttribute("type", "button")
+    btn.setAttribute("value", "Autofill")
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
+      btn.setAttribute("disabled", "true")
+      autofill(inGameState)
+    })
+    document.body.appendChild(btn)
+  }
+
+  private def autofill(inGameState: InGameState): Unit = {
+    inGameState.guesses.find(_._2.size == 1) match {
+      case Some((idx, numbers)) =>
+        val canPlace = Grid.getCanPlace(inGameState.grid.cells, idx, numbers.head)
+        toggleCellSelection(inGameState, idx)
+        makeMove(inGameState, idx, numbers.head)
+        if (canPlace) {
+          window.setTimeout(() => autofill(inGameState), 500)
+        }
+      case None =>
+        val btn = document.getElementById("autofill_btn")
+        btn.removeAttribute("disabled")
+    }
+  }
+
   private def drawAllGhosts(inGameState: InGameState): Unit = {
     val batchGhostMoves = inGameState.grid.cells.zipWithIndex.filter(_._1 == 0).map {
       case (_, idx) =>
@@ -206,6 +243,7 @@ object Main {
     addEraseBtn(inGameState)
     addDrawAllGhostsBtn(inGameState)
     addToggleGhostModeBtn(inGameState)
+    addAutofillBtn(inGameState)
     // TODO: showHint
     document.body.appendChild(document.createElement("br"))
   }
@@ -297,6 +335,9 @@ object Main {
       inGameState.moveHistory += RealMove(idx, isError, number)
       inGameState.guesses.remove(idx)
       saveGameState(inGameState)
+      if (!isError) {
+        congratulateIfFinished(inGameState)
+      }
     }
   }
 

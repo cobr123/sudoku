@@ -141,8 +141,12 @@ object Grid {
     rowIndexes.map(getRow(cells)(_).mkString("", " ", "")).foreach(println)
   }
 
+  def getCanPlace(cells: Array[Int], idx: Int, number: Int): Boolean = {
+    getGuesses(cells, idx).contains(number)
+  }
+  
   def placeNumber(cells: Array[Int], idx: Int, number: Int): Boolean = {
-    val canPlace = getGuesses(cells, idx).contains(number)
+    val canPlace = getCanPlace(cells, idx, number)
     cells(idx) = number
     canPlace
   }
