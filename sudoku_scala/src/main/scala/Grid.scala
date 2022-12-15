@@ -1,5 +1,6 @@
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.util.Random
 
 final case class Grid(cells: Array[Int]) {
@@ -26,7 +27,7 @@ object Grid {
   private val colIndexes: Array[Int] = (0 until 9).toArray
   private val rowIndexes: Array[Int] = (0 until 9).toArray
   private val gridIndexes: Array[Int] = (0 until 9 * 9).toArray
-  private val subGridIndexes: Array[Int] = (0 until 3).toArray
+  val subGridIndexes: Array[Int] = (0 until 9).toArray
 
   def isFinished(cells: Array[Int]): Boolean = {
     colIndexes.map(getCol(cells)).forall(SubGrid.isCorrect) &&
@@ -41,7 +42,7 @@ object Grid {
     (row, column)
   }
 
-  def getSubGridIdxs(subGridIdx: Int): Array[Int] = {
+  def getSubGridCellIdxs(subGridIdx: Int): Array[Int] = {
     val (row, column) = getSubGridRowAndColumn(subGridIdx)
 
     val idx = (row * 9 + column) * 3
@@ -51,7 +52,7 @@ object Grid {
   }
 
   def getSubGrid(cells: Array[Int])(subGridIdx: Int): Array[Int] = {
-    getSubGridIdxs(subGridIdx).map(idx => cells(idx))
+    getSubGridCellIdxs(subGridIdx).map(idx => cells(idx))
   }
 
   def getColIdxs(col: Int): Array[Int] = {
@@ -144,7 +145,7 @@ object Grid {
   def getCanPlace(cells: Array[Int], idx: Int, number: Int): Boolean = {
     getGuesses(cells, idx).contains(number)
   }
-  
+
   def placeNumber(cells: Array[Int], idx: Int, number: Int): Boolean = {
     val canPlace = getCanPlace(cells, idx, number)
     cells(idx) = number
@@ -161,5 +162,20 @@ object Grid {
   def getGuesses(cells: Array[Int], idx: Int): Set[Int] = {
     val (row, column) = getRowAndColumn(idx)
     availableValues -- getRow(cells)(row) -- getCol(cells)(column) -- getSubGrid(cells)(getSubGridIdx(row, column))
+  }
+
+  def getLastNumberGuessInSubGrid(guesses: mutable.HashMap[Int, Set[Int]]): Option[(Int, Set[Int])] = {
+    guesses.find {
+      case (idx, set) if set.size > 1 =>
+        val (row, column) = Grid.getRowAndColumn(idx)
+        Grid.getSubGridCellIdxs(Grid.getSubGridIdx(row, column))
+          .flatMap(idx => guesses.getOrElse(idx, Set.empty).toArray)
+          .groupBy(a => a)
+          .exists {
+            case (num, arr) if arr.length == 1 && set.contains(num) => true
+            case _ => false
+          }
+      case _ => false
+    }
   }
 }

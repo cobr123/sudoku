@@ -2,6 +2,7 @@ import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.time.{Seconds, Span}
 
+import scala.collection.mutable
 import scala.language.postfixOps
 
 
@@ -240,6 +241,23 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     assert(canPlace1 === false)
     val canPlace5 = Grid.placeNumber(grid.cells, 0, 5)
     assert(canPlace5 === true)
+  }
+
+  it("getLastNumberGuessInSubGrid") {
+    val guesses = mutable.HashMap[Int, Set[Int]]()
+    guesses += (0 -> Set(1, 2, 3, 4))
+    guesses += (1 -> Set(1, 2, 3))
+    guesses += (2 -> Set(1, 2, 3))
+    guesses += (9 -> Set(1, 2, 3, 5))
+    guesses += (10 -> Set(1, 2, 3))
+    guesses += (11 -> Set(1, 2, 3))
+
+    Grid.getLastNumberGuessInSubGrid(guesses) match {
+      case Some((idx, guesses)) =>
+        assert(idx === 0)
+        assert(guesses === Set(1, 2, 3, 4))
+      case None => fail()
+    }
   }
 
 }
