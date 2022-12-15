@@ -397,16 +397,19 @@ object Main {
       case GhostMove(lastMoveIdx, lastMoveGuesses) if lastMoveIdx == idx && lastMoveGuesses.contains(number) => true
       case _ => false
     }
-    if (!isSameMove) {
-      val newGuesses = inGameState.guesses.getOrElse(idx, Set.empty) ++ Set(number)
-      inGameState.guesses += (idx -> newGuesses)
-      inGameState.moveHistory += GhostMove(idx, inGameState.guesses(idx))
-
-      val td = document.getElementById(s"cell_$idx")
-      addGhostTable(td, idx, newGuesses)
-
-      saveGameState(inGameState)
+    val needUndoGhost = inGameState.guesses.contains(idx) && inGameState.guesses(idx).contains(number)
+    val newGuesses = if (isSameMove || needUndoGhost) {
+      inGameState.guesses.getOrElse(idx, Set.empty) -- Set(number)
+    } else {
+      inGameState.guesses.getOrElse(idx, Set.empty) ++ Set(number)
     }
+    inGameState.guesses += (idx -> newGuesses)
+    inGameState.moveHistory += GhostMove(idx, inGameState.guesses(idx))
+
+    val td = document.getElementById(s"cell_$idx")
+    addGhostTable(td, idx, newGuesses)
+
+    saveGameState(inGameState)
   }
 
   private def clearGridCell(inGameState: InGameState, idx: Int): Unit = {
