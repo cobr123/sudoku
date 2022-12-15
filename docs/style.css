@@ -32,7 +32,8 @@ td {
 }
 
 input[type=button] {
-  height: 2em;
+  height: 3em;
+  min-width: 3em;
   padding-left: 7px;
   padding-right: 7px;
   padding-top: 2px;
