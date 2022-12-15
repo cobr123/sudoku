@@ -57,9 +57,10 @@ object Main {
       btn.setAttribute("type", "button")
       btn.setAttribute("value", complexity.toString)
       btn.addEventListener("click", { (_: dom.MouseEvent) =>
-        btn.setAttribute("value", s"${btn.getAttribute("value")}. Loading...")
         btn.setAttribute("disabled", "true")
-        initAndDrawGameState(complexity)
+        window.setTimeout(() => {
+          initAndDrawGameState(complexity)
+        }, 10)
       })
       document.body.appendChild(btn)
       document.body.appendChild(document.createElement("br"))
@@ -67,9 +68,16 @@ object Main {
   }
 
   private def initAndDrawGameState(complexity: Complexity): Unit = {
-    val state = InGameState(complexity)
-    saveGameState(state)
-    drawInGameState(state)
+    clearScreen()
+    val div = document.createElement("div")
+    div.append("Loading...")
+    document.body.append(div)
+
+    window.setTimeout(() => {
+      val state = InGameState(complexity)
+      saveGameState(state)
+      drawInGameState(state)
+    }, 10)
   }
 
   private def saveGameState(inGameState: InGameState): Unit = {
