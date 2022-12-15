@@ -2,6 +2,7 @@ import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.time.{Seconds, Span}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.postfixOps
 
@@ -248,11 +249,10 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     guesses += (0 -> Set(1, 2, 3, 4))
     guesses += (1 -> Set(1, 2, 3))
     guesses += (2 -> Set(1, 2, 3))
-    guesses += (9 -> Set(1, 2, 3, 5))
     guesses += (10 -> Set(1, 2, 3))
     guesses += (11 -> Set(1, 2, 3))
 
-    Grid.getLastNumberGuessInSubGrid(guesses) match {
+    Grid.getLastNumberGuessInSubGrid(guesses.toMap) match {
       case Some((idx, guesses)) =>
         assert(idx === 0)
         assert(guesses === Set(4))
@@ -270,7 +270,7 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     guesses += (18 -> Set(1, 2, 5, 8))
     guesses += (20 -> Set(1, 2, 4, 5, 8))
 
-    Grid.getLastNumberGuessInSubGrid(guesses) match {
+    Grid.getLastNumberGuessInSubGrid(guesses.toMap) match {
       case Some((idx, guesses)) =>
         assert(idx === 1)
         assert(guesses === Set(7))
@@ -278,4 +278,55 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     }
   }
 
+  it("getLastNumberGuessInSubGrid 3") {
+    val guesses = List(
+      (60, Set.empty), (61, Set(2, 4, 5, 6, 7, 9)), (62, Set(2, 4, 5, 6, 9)),
+      (69, Set(1, 4, 5, 6)), (70, Set(4, 5, 6, 7, 9)), (71, Set.empty),
+      (78, Set(1, 4, 5, 6)), (79, Set(2, 4, 5, 6, 7, 9)), (80, Set(1, 2, 4, 5, 6, 9))
+    ).toMap
+
+    assert(Grid.getLastNumberGuessInSubGrid(guesses) === None)
+  }
+
+  it("auto fill") {
+    val r1 = Row(0, 0, 0, 0, 8, 9, 0, 0, 0)
+    val r2 = Row(0, 0, 9, 0, 0, 0, 0, 0, 0)
+    val r3 = Row(0, 0, 0, 1, 0, 0, 7, 8, 0)
+    val r4 = Row(0, 0, 0, 0, 0, 0, 2, 1, 0)
+    val r5 = Row(0, 8, 0, 0, 0, 0, 9, 0, 7)
+    val r6 = Row(0, 0, 7, 0, 0, 0, 0, 0, 0)
+    val r7 = Row(0, 0, 1, 0, 0, 0, 8, 0, 0)
+    val r8 = Row(0, 0, 8, 2, 0, 0, 0, 0, 3)
+    val r9 = Row(0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val grid = Grid(Array(r1, r2, r3, r4, r5, r6, r7, r8, r9))
+    assert(!Grid.isFinished(grid.cells))
+    assert(grid.cells.count(_ != 0) === Complexity.Extreme.solvedCellCount)
+
+    val guesses = grid.cells.zipWithIndex.filter(_._1 == 0).map {
+      case (_, idx) =>
+        val newGuesses = Grid.getGuesses(grid.cells, idx)
+        (idx, newGuesses)
+    }.toMap
+    assert(guesses.filter(_._2.nonEmpty).keys.size == grid.cells.length - Complexity.Extreme.solvedCellCount)
+
+    autofill(grid.cells, guesses)
+
+    println(guesses.toArray.map(kv => (kv._1, kv._2.toArray.sorted.mkString(" Set(", ", ", ")"))).sortBy(_._1).mkString(",\n"))
+    assert(guesses.isEmpty)
+    assert(Grid.isFinished(grid.cells))
+  }
+
+  @tailrec
+  private def autofill(cells: Array[Int], guesses: Map[Int, Set[Int]]): Unit = {
+    guesses.find(_._2.size == 1).orElse(Grid.getLastNumberGuessInSubGrid(guesses)) match {
+      case Some((idx, numbers)) =>
+        val canPlace = Grid.getCanPlace(cells, idx, numbers.head)
+        cells(idx) = numbers.head
+        Grid.printGrid(cells, idx)
+        if (canPlace) {
+          autofill(cells, guesses.drop(idx))
+        }
+      case None =>
+    }
+  }
 }

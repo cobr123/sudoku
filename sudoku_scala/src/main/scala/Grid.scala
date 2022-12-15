@@ -1,6 +1,5 @@
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 import scala.util.Random
 
 final case class Grid(cells: Array[Int]) {
@@ -142,6 +141,24 @@ object Grid {
     rowIndexes.map(getRow(cells)(_).mkString("", " ", "")).foreach(println)
   }
 
+  def printGrid(cells: Array[Int], idx: Int): Unit = {
+    val (row, column) = getRowAndColumn(idx)
+    println("------------------------------------------------------")
+    rowIndexes
+      .map { r =>
+        val arr = if (r == row) {
+          getRow(cells)(r).zipWithIndex.map {
+            case (n, c) if c == column => s"[$n]"
+            case (n, _) => s"$n"
+          }
+        } else {
+          getRow(cells)(r)
+        }
+        arr.mkString("", " ", "")
+      }
+      .foreach(println)
+  }
+
   def getCanPlace(cells: Array[Int], idx: Int, number: Int): Boolean = {
     getGuesses(cells, idx).contains(number)
   }
@@ -165,24 +182,21 @@ object Grid {
   }
 
   @tailrec
-  def getLastNumberGuessInSubGrid(guesses: mutable.HashMap[Int, Set[Int]], acc: Option[(Int, Set[Int])] = None): Option[(Int, Set[Int])] = {
-    if (acc.isDefined || guesses.isEmpty) {
-      acc
+  def getLastNumberGuessInSubGrid(guesses: Map[Int, Set[Int]], subGridIdxs: Array[Int] = Grid.subGridIndexes): Option[(Int, Set[Int])] = {
+    if (subGridIdxs.isEmpty) {
+      None
     } else {
-      val (idx, set) = guesses.head
-      if (set.size > 1) {
-        val (row, column) = Grid.getRowAndColumn(idx)
-        Grid.getSubGridCellIdxs(Grid.getSubGridIdx(row, column))
-          .flatMap(idx => guesses.getOrElse(idx, Set.empty).toArray)
-          .groupBy(a => a)
-          .find {
-            case (num, arr) if arr.length == 1 && set.contains(num) => true
-            case _ => false
-          } match
-          case Some((num, _)) => Some((idx, Set(num)))
-          case None => getLastNumberGuessInSubGrid(guesses.tail, acc)
-      } else {
-        getLastNumberGuessInSubGrid(guesses.tail, acc)
+      Grid.getSubGridCellIdxs(subGridIdxs.head)
+        .flatMap(idx => guesses.getOrElse(idx, Set.empty).toArray.map(num => (num, Set(idx))))
+        .groupBy(_._1)
+        .find {
+          case (_, arr) if arr.length == 1 && arr.head._2.size == 1 => true
+          case _ => false
+        } match {
+        case Some((num, arr)) =>
+          Some((arr.head._2.head, Set(num)))
+        case None =>
+          getLastNumberGuessInSubGrid(guesses, subGridIdxs.tail)
       }
     }
   }

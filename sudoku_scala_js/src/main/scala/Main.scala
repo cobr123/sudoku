@@ -201,7 +201,7 @@ object Main {
   }
 
   private def autofill(inGameState: InGameState): Unit = {
-    inGameState.guesses.find(_._2.size == 1).orElse(Grid.getLastNumberGuessInSubGrid(inGameState.guesses)) match {
+    inGameState.guesses.find(_._2.size == 1).orElse(Grid.getLastNumberGuessInSubGrid(inGameState.guesses.toMap)) match {
       case Some((idx, numbers)) =>
         val canPlace = Grid.getCanPlace(inGameState.grid.cells, idx, numbers.head)
         toggleCellSelection(inGameState, idx)
