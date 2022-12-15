@@ -228,29 +228,31 @@ object Main {
   }
 
   private def addToggleGhostModeBtn(inGameState: InGameState): Unit = {
-    val cb = document.createElement("input")
-    cb.setAttribute("type", "checkbox")
+    val btn = document.createElement("input")
+    btn.setAttribute("type", "button")
     if (inGameState.ghostMode) {
-      cb.setAttribute("checked", "true")
+      btn.setAttribute("value", "GhostMode On")
+    } else {
+      btn.setAttribute("value", "GhostMode Off")
     }
-    cb.id = "toggleGhostModeCheckbox"
-    cb.addEventListener("change", { (_: dom.MouseEvent) =>
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
       inGameState.ghostMode = !inGameState.ghostMode
+      if (inGameState.ghostMode) {
+        btn.setAttribute("value", "GhostMode On")
+      } else {
+        btn.setAttribute("value", "GhostMode Off")
+      }
       saveGameState(inGameState)
     })
-    val label = document.createElement("label")
-    label.innerText = "Ghost mode"
-    label.setAttribute("for", cb.id)
-    document.body.appendChild(label)
-    document.body.appendChild(cb)
+    document.body.appendChild(btn)
   }
 
   private def drawControls(inGameState: InGameState): Unit = {
     addUndoBtn(inGameState)
     addEraseBtn(inGameState)
     addDrawAllGhostsBtn(inGameState)
-    addToggleGhostModeBtn(inGameState)
     addAutofillBtn(inGameState)
+    addToggleGhostModeBtn(inGameState)
     // TODO: showHint
     document.body.appendChild(document.createElement("br"))
   }
