@@ -281,6 +281,14 @@ object Main {
     removeClass(td, Set("error"))
   }
 
+  private def markHighlight(td: Element): Unit = {
+    addClass(td, Set("highlight"))
+  }
+
+  private def unMarkHighlight(td: Element): Unit = {
+    removeClass(td, Set("highlight"))
+  }
+
   private def toggleCellSelection(inGameState: InGameState, idx: Int): Unit = {
     inGameState.selectedIdx.foreach { prevIdx =>
       val (row, column) = Grid.getRowAndColumn(prevIdx)
@@ -290,6 +298,9 @@ object Main {
           val td = document.getElementById(s"cell_$idx")
           unMarkRowCol(td)
         }
+      document.querySelectorAll(".highlight").foreach { td =>
+        unMarkHighlight(td)
+      }
     }
     if (inGameState.selectedIdx.isEmpty || inGameState.selectedIdx.get != idx) {
       inGameState.selectedIdx = Some(idx)
@@ -301,6 +312,10 @@ object Main {
           val td = document.getElementById(s"cell_$idx")
           markRowCol(td)
         }
+      Grid.getHighlightedIds(inGameState, inGameState.grid.cells(idx)).foreach { id =>
+        val td = document.getElementById(id)
+        markHighlight(td)
+      }
     } else {
       inGameState.selectedIdx = None
     }

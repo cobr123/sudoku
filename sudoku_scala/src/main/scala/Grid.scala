@@ -178,4 +178,22 @@ object Grid {
       case _ => false
     }
   }
+
+  def getHighlightedIds(inGameState: InGameState, number: Int): Array[String] = {
+    if (number > 0) {
+      val numberIds = inGameState.grid.cells.zipWithIndex.filter {
+        case (n, _) => n == number
+      }.map {
+        case (_, idx) => s"cell_$idx"
+      }
+      val guessIds = inGameState.guesses.filter {
+        case (_, s) => s.contains(number)
+      }.map {
+        case (parentIdx, _) => s"cell_${parentIdx}_$number"
+      }
+      numberIds ++ guessIds
+    } else {
+      Array.empty
+    }
+  }
 }
