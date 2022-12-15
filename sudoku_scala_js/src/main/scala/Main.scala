@@ -94,18 +94,25 @@ object Main {
     drawGameTable(inGameState)
     drawControls(inGameState)
     drawNumbers(inGameState)
+
+    inGameState.moveHistory.foreach {
+      case RealMove(idx, isError, _) if isError =>
+        val td = document.getElementById(s"cell_$idx")
+        markError(td)
+      case _ =>
+    }
+    inGameState.moveHistory.lastOption.foreach {
+      case RealMove(idx, _, _) =>
+        inGameState.selectedIdx = None
+        toggleCellSelection(inGameState, idx)
+      case GhostMove(idx, _) =>
+        inGameState.selectedIdx = None
+        toggleCellSelection(inGameState, idx)
+      case _ =>
+    }
   }
 
   private def drawGameTable(inGameState: InGameState): Unit = {
-    val errorIdxs = inGameState.moveHistory.flatMap {
-      case RealMove(idx, isError, _) if isError => Set(idx)
-      case _ => Set.empty
-    }
-    val lastMoveIdx = inGameState.moveHistory.lastOption.map {
-      case RealMove(idx, _, _) => idx
-      case GhostMove(idx, _) => idx
-      case _ => -1
-    }.getOrElse(-1)
     val table = document.createElement("table")
     val tr = document.createElement("tr")
     table.append(tr)
@@ -116,7 +123,7 @@ object Main {
         td.setAttribute("id", s"cell_$idx")
         val guesses = inGameState.guesses.get(idx)
         if (guesses.isDefined) {
-          addGhostTable(td, guesses.get)
+          addGhostTable(td, idx, guesses.get)
         } else if (number == 0) {
           td.append("")
         } else {
@@ -126,14 +133,6 @@ object Main {
           toggleCellSelection(inGameState, idx)
         })
         tr.append(td)
-        if (lastMoveIdx == idx && errorIdxs.contains(idx)) {
-          markSelected(td)
-          markError(td)
-        } else if (errorIdxs.contains(idx)) {
-          markError(td)
-        } else if (lastMoveIdx == idx) {
-          markSelected(td)
-        }
 
         if ((idx + 1) % 9 == 0 && idx < inGameState.grid.cells.length) {
           val tr = document.createElement("tr")
@@ -266,16 +265,12 @@ object Main {
     }
   }
 
-  private def markSelected(td: Element, replaceAll: Boolean = false): Unit = {
-    if (replaceAll) {
-      td.setAttribute("class", "selected")
-    } else {
-      addClass(td, Set("selected"))
-    }
+  private def markRowCol(td: Element): Unit = {
+    addClass(td, Set("selected_row_col"))
   }
 
-  private def unMarkSelected(td: Element): Unit = {
-    removeClass(td, Set("selected"))
+  private def unMarkRowCol(td: Element): Unit = {
+    removeClass(td, Set("selected_row_col"))
   }
 
   private def markError(td: Element): Unit = {
@@ -288,13 +283,24 @@ object Main {
 
   private def toggleCellSelection(inGameState: InGameState, idx: Int): Unit = {
     inGameState.selectedIdx.foreach { prevIdx =>
-      val td = document.getElementById(s"cell_$prevIdx")
-      unMarkSelected(td)
+      val (row, column) = Grid.getRowAndColumn(prevIdx)
+      (Grid.getRowIdxs(row) ++ Grid.getColIdxs(column) ++ Grid.getSubGridCellIdxs(Grid.getSubGridIdx(row, column)))
+        .distinct
+        .foreach { idx =>
+          val td = document.getElementById(s"cell_$idx")
+          unMarkRowCol(td)
+        }
     }
     if (inGameState.selectedIdx.isEmpty || inGameState.selectedIdx.get != idx) {
       inGameState.selectedIdx = Some(idx)
-      val td = document.getElementById(s"cell_$idx")
-      markSelected(td)
+      val (row, column) = Grid.getRowAndColumn(idx)
+      (Grid.getRowIdxs(row) ++ Grid.getColIdxs(column) ++ Grid.getSubGridCellIdxs(Grid.getSubGridIdx(row, column)))
+        .distinct
+        .filter(subIdx => subIdx != idx)
+        .foreach { idx =>
+          val td = document.getElementById(s"cell_$idx")
+          markRowCol(td)
+        }
     } else {
       inGameState.selectedIdx = None
     }
@@ -317,7 +323,7 @@ object Main {
       if (number > 0) {
         td.append(s"$number")
       }
-      val isError = if (number == 0 || Grid.placeNumber(inGameState.grid.cells, idx, number)) {
+      val isError = if (Grid.placeNumber(inGameState.grid.cells, idx, number)) {
         unMarkError(td)
         val (row, column) = Grid.getRowAndColumn(idx)
         (Grid.getRowIdxs(row) ++ Grid.getColIdxs(column) ++ Grid.getSubGridCellIdxs(Grid.getSubGridIdx(row, column)))
@@ -341,7 +347,7 @@ object Main {
     }
   }
 
-  private def addGhostTable(td: Element, guesses: Set[Int]): Unit = {
+  private def addGhostTable(td: Element, parentIdx: Int, guesses: Set[Int]): Unit = {
     val table = document.createElement("table")
     table.setAttribute("class", "guess")
     for (row <- 0 to 2) {
@@ -352,6 +358,7 @@ object Main {
         val guessIdx = row * 3 + col
         val number = guessIdx + 1
         if (guesses.contains(number)) {
+          td.id = s"cell_${parentIdx}_$number"
           td.append(s"$number")
         }
         tr.append(td)
@@ -373,7 +380,7 @@ object Main {
       inGameState.moveHistory += GhostMove(idx, inGameState.guesses(idx))
 
       val td = document.getElementById(s"cell_$idx")
-      addGhostTable(td, newGuesses)
+      addGhostTable(td, idx, newGuesses)
 
       saveGameState(inGameState)
     }
@@ -425,7 +432,7 @@ object Main {
             inGameState.guesses += (idx -> guesses)
 
             val td = document.getElementById(s"cell_$idx")
-            addGhostTable(td, guesses)
+            addGhostTable(td, idx, guesses)
           } else {
             toggleCellSelection(inGameState, idx)
           }
@@ -449,7 +456,7 @@ object Main {
           inGameState.guesses += (idx -> guesses)
 
           val td = document.getElementById(s"cell_$idx")
-          addGhostTable(td, guesses)
+          addGhostTable(td, idx, guesses)
         }
     }
   }

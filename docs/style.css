@@ -19,20 +19,16 @@ td {
   height: 2.8em;
 }
 
-td.selected {
-  border: 1px solid #ddd;
+.selected_row_col {
   background-color: #e2e2e2;
-  text-align: center;
-  width: 2.8em;
-  height: 2.8em;
 }
 
-td.error {
-  border: 1px solid #ddd;
+.highlight {
+  background-color: #D2D6FF;
+}
+
+.error {
   color: red;
-  text-align: center;
-  width: 2.8em;
-  height: 2.8em;
 }
 
 input[type=button] {
