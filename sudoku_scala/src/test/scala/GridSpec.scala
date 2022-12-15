@@ -243,7 +243,7 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     assert(canPlace5 === true)
   }
 
-  it("getLastNumberGuessInSubGrid") {
+  it("getLastNumberGuessInSubGrid 1") {
     val guesses = mutable.HashMap[Int, Set[Int]]()
     guesses += (0 -> Set(1, 2, 3, 4))
     guesses += (1 -> Set(1, 2, 3))
@@ -255,7 +255,25 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     Grid.getLastNumberGuessInSubGrid(guesses) match {
       case Some((idx, guesses)) =>
         assert(idx === 0)
-        assert(guesses === Set(1, 2, 3, 4))
+        assert(guesses === Set(4))
+      case None => fail()
+    }
+  }
+
+  it("getLastNumberGuessInSubGrid 2") {
+    val guesses = mutable.HashMap[Int, Set[Int]]()
+    guesses += (1 -> Set(1, 2, 5, 7, 8))
+    guesses += (2 -> Set(1, 2, 4, 5, 8))
+    guesses += (9 -> Set(1, 2, 5, 6, 8))
+    guesses += (10 -> Set(1, 2, 4, 5, 6))
+    guesses += (11 -> Set(1, 2, 4, 5, 6, 8))
+    guesses += (18 -> Set(1, 2, 5, 8))
+    guesses += (20 -> Set(1, 2, 4, 5, 8))
+
+    Grid.getLastNumberGuessInSubGrid(guesses) match {
+      case Some((idx, guesses)) =>
+        assert(idx === 1)
+        assert(guesses === Set(7))
       case None => fail()
     }
   }

@@ -164,18 +164,26 @@ object Grid {
     availableValues -- getRow(cells)(row) -- getCol(cells)(column) -- getSubGrid(cells)(getSubGridIdx(row, column))
   }
 
-  def getLastNumberGuessInSubGrid(guesses: mutable.HashMap[Int, Set[Int]]): Option[(Int, Set[Int])] = {
-    guesses.find {
-      case (idx, set) if set.size > 1 =>
+  @tailrec
+  def getLastNumberGuessInSubGrid(guesses: mutable.HashMap[Int, Set[Int]], acc: Option[(Int, Set[Int])] = None): Option[(Int, Set[Int])] = {
+    if (acc.isDefined || guesses.isEmpty) {
+      acc
+    } else {
+      val (idx, set) = guesses.head
+      if (set.size > 1) {
         val (row, column) = Grid.getRowAndColumn(idx)
         Grid.getSubGridCellIdxs(Grid.getSubGridIdx(row, column))
           .flatMap(idx => guesses.getOrElse(idx, Set.empty).toArray)
           .groupBy(a => a)
-          .exists {
+          .find {
             case (num, arr) if arr.length == 1 && set.contains(num) => true
             case _ => false
-          }
-      case _ => false
+          } match
+          case Some((num, _)) => Some((idx, Set(num)))
+          case None => getLastNumberGuessInSubGrid(guesses.tail, acc)
+      } else {
+        getLastNumberGuessInSubGrid(guesses.tail, acc)
+      }
     }
   }
 
