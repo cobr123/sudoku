@@ -247,12 +247,64 @@ object Main {
     document.body.appendChild(btn)
   }
 
+  private def addSaveBtn(inGameState: InGameState): Unit = {
+    val btn = document.createElement("input")
+    btn.setAttribute("type", "button")
+    btn.setAttribute("value", "Save")
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
+      inGameState.moveHistoryBackup = Some(GameStateBackup(
+        inGameState.grid,
+        inGameState.selectedIdx,
+        inGameState.ghostMode,
+        inGameState.moveHistory.toArray,
+        inGameState.guesses.toMap
+      ))
+      saveGameState(inGameState)
+
+      val btn = document.getElementById("restore_btn")
+      btn.removeAttribute("disabled")
+    })
+    document.body.appendChild(btn)
+  }
+
+  private def addRestoreBtn(inGameState: InGameState): Unit = {
+    val btn = document.createElement("input")
+    btn.id = "restore_btn"
+    if (inGameState.moveHistoryBackup.isEmpty) {
+      btn.setAttribute("disabled", "true")
+    }
+    btn.setAttribute("type", "button")
+    btn.setAttribute("value", "Restore")
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
+      inGameState.moveHistoryBackup.foreach { backup =>
+        for (idx <- backup.grid.cells.indices) {
+          inGameState.grid.cells(idx) = backup.grid.cells(idx)
+        }
+
+        inGameState.selectedIdx = backup.selectedIdx
+        inGameState.ghostMode = backup.ghostMode
+
+        inGameState.moveHistory.clear()
+        inGameState.moveHistory.addAll(backup.moveHistory)
+
+        inGameState.guesses.clear()
+        inGameState.guesses.addAll(backup.guesses)
+
+        saveGameState(inGameState)
+        drawInGameState(inGameState)
+      }
+    })
+    document.body.appendChild(btn)
+  }
+
   private def drawControls(inGameState: InGameState): Unit = {
     addUndoBtn(inGameState)
     addEraseBtn(inGameState)
     addDrawAllGhostsBtn(inGameState)
     addAutofillBtn(inGameState)
     addToggleGhostModeBtn(inGameState)
+    addSaveBtn(inGameState)
+    addRestoreBtn(inGameState)
     // TODO: showHint
     document.body.appendChild(document.createElement("br"))
   }

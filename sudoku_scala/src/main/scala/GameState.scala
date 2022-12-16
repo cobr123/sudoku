@@ -14,6 +14,7 @@ final case class InGameState(grid: Grid,
                              var ghostMode: Boolean = false,
                              moveHistory: mutable.ArrayBuffer[Move] = mutable.ArrayBuffer.empty,
                              guesses: mutable.HashMap[Int, Set[Int]] = mutable.HashMap.empty,
+                             var moveHistoryBackup: Option[GameStateBackup] = None
                             ) extends GameState
 
 object InGameState {
