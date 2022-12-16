@@ -15,6 +15,8 @@ enum Complexity(val solvedCellCount: Int) {
   case Expert extends Complexity(22)
 
   case Extreme extends Complexity(17)
+
+  case Empty extends Complexity(0)
 }
 
 object Complexity {
