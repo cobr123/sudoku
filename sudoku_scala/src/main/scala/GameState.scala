@@ -23,7 +23,11 @@ object InGameState {
   implicit val codec: JsonValueCodec[InGameState] = JsonCodecMaker.make
 
   def apply(complexity: Complexity): InGameState = {
-    val grid = Complexity.changeSolvedGridByComplexity(Grid.solve(Grid().cells), complexity)
+    val grid = if (complexity.solvedCellCount > 0) {
+      Complexity.changeSolvedGridByComplexity(Grid.solve(Grid().cells), complexity)
+    } else {
+      Grid()
+    }
     InGameState(grid, complexity)
   }
 
