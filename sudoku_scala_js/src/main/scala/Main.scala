@@ -360,8 +360,10 @@ object Main {
           val td = document.getElementById(s"cell_$idx")
           unMarkRowCol(td)
         }
-      document.querySelectorAll(".highlight").foreach { td =>
-        unMarkHighlight(td)
+      if (inGameState.grid.cells(idx) > 0) {
+        document.querySelectorAll(".highlight").foreach { td =>
+          unMarkHighlight(td)
+        }
       }
     }
     if (inGameState.selectedIdx.isEmpty || inGameState.selectedIdx.get != idx) {
@@ -459,6 +461,7 @@ object Main {
     }
     inGameState.guesses += (idx -> newGuesses)
     inGameState.moveHistory += GhostMove(idx, inGameState.guesses(idx))
+    inGameState.grid.cells(idx) = 0
 
     val td = document.getElementById(s"cell_$idx")
     addGhostTable(td, idx, newGuesses)
@@ -534,6 +537,7 @@ object Main {
           clearCell(td)
         } else {
           inGameState.guesses += (idx -> guesses)
+          inGameState.grid.cells(idx) = 0
 
           val td = document.getElementById(s"cell_$idx")
           addGhostTable(td, idx, guesses)
