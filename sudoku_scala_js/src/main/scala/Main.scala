@@ -90,7 +90,7 @@ object Main {
   private def congratulateIfFinished(inGameState: InGameState): Unit = {
     if (Grid.isFinished(inGameState.grid.cells)) {
       window.setTimeout(() => {
-        window.alert("Congratulations!")
+        window.alert(s"${inGameState.complexity.toString} game is solved, congratulations!")
         window.localStorage.removeItem(InGameState.STORAGE_KEY_NAME)
         drawInMenuState()
       }, 500)
