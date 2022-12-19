@@ -312,8 +312,8 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
     autofill(grid.cells, guesses)
 
     println(guesses.toArray.map(kv => (kv._1, kv._2.toArray.sorted.mkString(" Set(", ", ", ")"))).sortBy(_._1).mkString(",\n"))
-    assert(guesses.isEmpty)
-    assert(Grid.isFinished(grid.cells))
+    assert(guesses.nonEmpty)
+    assert(!Grid.isFinished(grid.cells))
   }
 
   @tailrec
@@ -328,5 +328,33 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
         }
       case None =>
     }
+  }
+
+  it("getGhostCrossedByLine horizontal subGrid 0 - subGrid 1") {
+    val guesses = List(
+      (0, Set(2, 6, 9)), (1, Set(1, 4, 5, 6, 7, 9)), (2, Set(1, 4, 5, 6, 9)),
+      (9, Set(2, 4, 5, 6)), (10, Set(1, 5, 6, 7, 9)), (11, Set.empty),
+      (18, Set(1, 4, 5, 6)), (19, Set(1, 4, 5, 6, 7, 9)), (20, Set(1, 3, 4, 5, 6, 9)),
+
+      (3, Set(1, 6, 9)), (4, Set(1, 4, 5, 6, 7, 9)), (5, Set(1, 4, 5, 6, 9)),
+      (12, Set(2, 4, 5, 6)), (13, Set(2, 5, 6, 7, 9)), (14, Set.empty),
+      (21, Set(1, 4, 5, 6)), (22, Set(1, 4, 5, 6, 7, 9)), (23, Set(1, 3, 4, 5, 6, 9))
+    ).toMap
+
+    assert(Grid.getGhostCrossedByLine(guesses) === Some((9, 2)))
+  }
+
+  it("getGhostCrossedByLine vertical subGrid 0 - subGrid 3") {
+    val guesses = List(
+      (0, Set(2, 6, 9)), (1, Set(1, 4, 5, 6, 7, 9)), (2, Set(1, 4, 5, 6, 9)),
+      (9, Set(2, 4, 5, 6)), (10, Set(1, 5, 6, 7, 9)), (11, Set.empty),
+      (18, Set(1, 4, 5, 6)), (19, Set(1, 4, 5, 6, 7, 9)), (20, Set(1, 3, 4, 5, 6, 9)),
+
+      (27, Set(1, 6, 9)), (28, Set(1, 4, 5, 6, 7, 9)), (29, Set(1, 4, 5, 6, 9)),
+      (36, Set(2, 4, 5, 6)), (37, Set(2, 5, 6, 7, 9)), (38, Set.empty),
+      (45, Set(1, 4, 5, 6)), (46, Set(1, 4, 5, 6, 7, 9)), (47, Set(1, 3, 4, 5, 6, 9))
+    ).toMap
+
+    assert(Grid.getGhostCrossedByLine(guesses) === Some((36, 2)))
   }
 }

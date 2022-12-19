@@ -212,8 +212,19 @@ object Main {
           window.setTimeout(() => autofill(inGameState), 500)
         }
       case None =>
-        val btn = document.getElementById("autofill_btn")
-        btn.removeAttribute("disabled")
+        val ghostToRemove = Grid.getGhostCrossedByLine(inGameState.guesses.toMap)
+        if (ghostToRemove.isDefined) {
+          ghostToRemove.foreach {
+            case (idx, number) =>
+              toggleCellSelection(inGameState, idx)
+              makeGhostMove(inGameState, idx, number)
+          }
+          window.setTimeout(() => autofill(inGameState), 500)
+        } else {
+          Option(document.getElementById("autofill_btn")).foreach { btn =>
+            btn.removeAttribute("disabled")
+          }
+        }
     }
   }
 
