@@ -2,6 +2,8 @@
 import org.scalajs.dom
 import org.scalajs.dom.{Element, document, window}
 
+import scala.util.Random
+
 object Main {
 
   def main(args: Array[String]): Unit = {
@@ -201,7 +203,7 @@ object Main {
   }
 
   private def autofill(inGameState: InGameState): Unit = {
-    inGameState.guesses.find(_._2.size == 1).orElse(Grid.getLastNumberGuessInSubGrid(inGameState.guesses.toMap)) match {
+    Random.shuffle(inGameState.guesses.filter(_._2.size == 1)).headOption.orElse(Grid.getLastNumberGuessInSubGrid(inGameState.guesses.toMap)) match {
       case Some((idx, numbers)) =>
         val canPlace = Grid.getCanPlace(inGameState.grid.cells, idx, numbers.head)
         toggleCellSelection(inGameState, idx)
