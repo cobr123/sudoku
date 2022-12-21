@@ -76,14 +76,16 @@ object Main {
     document.body.append(div)
 
     window.setTimeout(() => {
-      val state = InGameState(complexity)
+      val state = InGameState(complexity, isDebug)
       saveGameState(state)
       drawInGameState(state)
     }, 10)
   }
 
+  private def isDebug: Boolean = window.location.host.contains("localhost")
+
   private def saveGameState(inGameState: InGameState): Unit = {
-    if (window.location.host.contains("localhost")) {
+    if (isDebug) {
       println(InGameState.toJsonDebug(inGameState))
     }
     window.localStorage.setItem(InGameState.STORAGE_KEY_NAME, InGameState.toJson(inGameState))

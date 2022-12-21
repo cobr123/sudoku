@@ -1,4 +1,7 @@
 
+import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
+
 import scala.annotation.tailrec
 import scala.util.Random
 
@@ -7,6 +10,8 @@ final case class Grid(cells: Array[Int]) {
 }
 
 object Grid {
+
+  implicit val codec: JsonValueCodec[Grid] = JsonCodecMaker.make
 
   def apply(subGrids: SubGrid*): Grid = {
     val rows = List(0, 3, 6).flatMap { i =>
@@ -120,19 +125,21 @@ object Grid {
   }
 
   @tailrec
-  def solve(initGridCells: Array[Int], lastPrintTimeMillis: Long = 0): Grid = {
+  def solve(initGridCells: Array[Int], lastPrintTimeMillis: Long = 0, printIntermediateGrids: Boolean = true): Grid = {
     val cells = trySolveRandom(initGridCells.clone())
 
     if (isFinished(cells)) {
       Grid(cells)
     } else {
       var printTimeMillis = lastPrintTimeMillis
-      val currentTimeMillis = System.currentTimeMillis()
-      if (currentTimeMillis - lastPrintTimeMillis >= 5000) {
-        printGrid(cells)
-        printTimeMillis = currentTimeMillis
+      if (printIntermediateGrids) {
+        val currentTimeMillis = System.currentTimeMillis()
+        if (currentTimeMillis - lastPrintTimeMillis >= 5000) {
+          printGrid(cells)
+          printTimeMillis = currentTimeMillis
+        }
       }
-      solve(initGridCells, printTimeMillis)
+      solve(initGridCells, printTimeMillis, printIntermediateGrids)
     }
   }
 
