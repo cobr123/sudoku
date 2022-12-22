@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import cats.effect.unsafe.implicits.global
 
 object DataGen {
-  
+
   val dir = "./data"
 
   val infiniteSolvedGrids: Stream[IO, Grid] = Stream.eval(IO(Grid.solve(Grid().cells, printIntermediateGrids = false))).repeat
