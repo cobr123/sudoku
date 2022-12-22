@@ -21,6 +21,7 @@ lazy val sudoku_scala = (project in file("./sudoku_scala"))
     libraryDependencies ++= Seq(
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % "2.19.0",
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % "2.19.0" % Provided,
+      "co.fs2" %% "fs2-core" % "3.4.0",
       "org.scalatest" %% "scalatest" % "3.2.14" % "test",
     )
   )
