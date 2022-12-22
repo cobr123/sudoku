@@ -32,12 +32,13 @@ object DataGen {
           Files.notExists(Paths.get(fileName))
         }
       }
-      .parEvalMapUnordered(maxConcurrent) { grid =>
+      .takeWhile(_ => count.incrementAndGet() <= 1_000_000)
+      .mapAsync(maxConcurrent) { grid =>
         IO {
           val fileName = s"$dir/${grid.cells.mkString}.json"
           val fileContent = writeToString(grid)
           Files.write(Paths.get(fileName), fileContent.getBytes(StandardCharsets.UTF_8))
-          if (count.incrementAndGet() % 100 == 0) {
+          if (count.get() % 100 == 0) {
             prevTimeMillis.getAndUpdate { prevTimeMillis =>
               val current = System.currentTimeMillis()
               println(s"${Thread.currentThread().getName}: $count, ${(current - prevTimeMillis) / 1000} sec")
