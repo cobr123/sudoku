@@ -18,20 +18,21 @@ object DataGen {
   def main(args: Array[String]): Unit = {
     val count = AtomicInteger(Option(new File(dir).list).map(_.count(_.endsWith(".json"))).getOrElse(0))
     val prevTimeMillis = AtomicLong(System.currentTimeMillis())
+    val maxConcurrent = Runtime.getRuntime.availableProcessors() / 2
 
-    val stream = (1 until Runtime.getRuntime.availableProcessors()).foldLeft(infiniteSolvedGrids) {
+    val stream = (1 to maxConcurrent).foldLeft(infiniteSolvedGrids) {
       case (s, _) =>
         s.merge(infiniteSolvedGrids)
     }
 
     stream
-      .evalFilterAsync(Runtime.getRuntime.availableProcessors()) { grid =>
+      .evalFilterAsync(maxConcurrent) { grid =>
         IO {
           val fileName = s"$dir/${grid.cells.mkString}.json"
           Files.notExists(Paths.get(fileName))
         }
       }
-      .parEvalMapUnordered(Runtime.getRuntime.availableProcessors()) { grid =>
+      .parEvalMapUnordered(maxConcurrent) { grid =>
         IO {
           val fileName = s"$dir/${grid.cells.mkString}.json"
           val fileContent = writeToString(grid)
