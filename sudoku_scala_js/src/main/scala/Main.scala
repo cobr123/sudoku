@@ -2,6 +2,8 @@
 import org.scalajs.dom
 import org.scalajs.dom.{Element, document, window}
 
+import scala.scalajs.js
+import scala.scalajs.js.JSON
 import scala.util.Random
 
 object Main {
@@ -84,10 +86,14 @@ object Main {
 
   private def isDebug: Boolean = window.location.host.contains("localhost")
 
-  private def saveGameState(inGameState: InGameState): Unit = {
+  private def log(x: => Any): Unit = {
     if (isDebug) {
-      println(InGameState.toJsonDebug(inGameState))
+      println(x)
     }
+  }
+
+  private def saveGameState(inGameState: InGameState): Unit = {
+    log(InGameState.toJsonDebug(inGameState))
     window.localStorage.setItem(InGameState.STORAGE_KEY_NAME, InGameState.toJson(inGameState))
   }
 
@@ -108,17 +114,17 @@ object Main {
     drawNumbers(inGameState)
 
     inGameState.moveHistory.foreach {
-      case RealMove(idx, isError, _) if isError =>
+      case RealMove(idx, isError, _) =>
         val td = document.getElementById(s"cell_$idx")
-        markError(td)
+        if (isError) markError(td)
+        else unMarkError(td)
       case _ =>
     }
+    inGameState.selectedIdx = None
     inGameState.moveHistory.lastOption.foreach {
       case RealMove(idx, _, _) =>
-        inGameState.selectedIdx = None
         toggleCellSelection(inGameState, idx)
       case GhostMove(idx, _) =>
-        inGameState.selectedIdx = None
         toggleCellSelection(inGameState, idx)
       case _ =>
     }
@@ -202,6 +208,50 @@ object Main {
       autofill(inGameState)
     })
     document.body.appendChild(btn)
+  }
+
+  private def addAiHintBtn(inGameState: InGameState): Unit = {
+    val btn = document.createElement("input")
+    btn.setAttribute("type", "button")
+    btn.setAttribute("value", "Ai Hint")
+    btn.addEventListener("click", { (_: dom.MouseEvent) =>
+      fillOneByAi(inGameState)
+    })
+    document.body.appendChild(btn)
+  }
+
+  private def fillOneByAi(inGameState: InGameState): Unit = {
+    inGameState.selectedIdx match
+      case Some(idx) if inGameState.grid.cells(idx) == 0 => fillOneByAi(inGameState, idx)
+      case _ =>
+        Random.shuffle(inGameState.grid.cells.zipWithIndex).find {
+          case (n, _) => n == 0
+        } match {
+          case Some((_, idx)) =>
+            fillOneByAi(inGameState, idx)
+          case None =>
+        }
+  }
+
+  private def fillOneByAi(inGameState: InGameState, selectedIdx: Int): Unit = {
+    val xhr = new dom.XMLHttpRequest()
+    xhr.open("POST", "https://safebuster2-sudoku.hf.space/run/predict")
+    xhr.setRequestHeader("Content-Type", "application/json")
+    xhr.onload = { (_: dom.Event) =>
+      log(xhr.responseText)
+      val resp = js.JSON.parse(xhr.responseText)
+      val dataHead = resp.selectDynamic("data").asInstanceOf[js.Array[js.Dynamic]].head
+      val label = dataHead.selectDynamic("label").toString.toInt
+      assert(Grid.availableValues.contains(label))
+      if (!inGameState.selectedIdx.contains(selectedIdx)) {
+        toggleCellSelection(inGameState, selectedIdx)
+      }
+      makeMove(inGameState, selectedIdx, label)
+    }
+    val cellsStr = inGameState.grid.cells.mkString(",")
+    val data = s"""{"data":["$cellsStr",$selectedIdx]}"""
+    log(data)
+    xhr.send(data)
   }
 
   private def autofill(inGameState: InGameState): Unit = {
@@ -317,6 +367,7 @@ object Main {
     addEraseBtn(inGameState)
     addDrawAllGhostsBtn(inGameState)
     addAutofillBtn(inGameState)
+    addAiHintBtn(inGameState)
     addToggleGhostModeBtn(inGameState)
     addSaveBtn(inGameState)
     addRestoreBtn(inGameState)
