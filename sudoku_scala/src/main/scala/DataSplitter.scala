@@ -18,6 +18,7 @@ object DataSplitter {
     saveCsv(train, "train")
     saveCsv(test, "test")
     saveCsv(valid, "valid")
+    saveCsv(list, "all")
   }
 
   def saveCsv(fileNames: List[String], csvFileName: String): Unit = {
