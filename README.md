@@ -1,0 +1,1 @@
+model deployed to https://huggingface.co/spaces/safebuster2/sudoku
