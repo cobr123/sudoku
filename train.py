@@ -29,7 +29,7 @@ def train(df, idx):
     dls.show_batch()
 
     learn = tabular_learner(dls, metrics=accuracy)
-    learn.fit_one_cycle(1)
+    learn.fit_one_cycle(5)
     learn.show_results()
     learn.export('./models/model_' + str(idx) + '.pkl')
 
@@ -50,8 +50,8 @@ def train(df, idx):
 path = Path('./data_set')
 # print(path.ls())
 
-df = pd.read_csv(path / 'all.csv')
-# print(df.head())
 
 for idx in range(81):
+    df = pd.read_csv(path / ('all_' + str(idx) + '.csv'))
+    # print(df.head())
     train(df, idx)

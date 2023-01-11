@@ -24,7 +24,7 @@ object InGameState {
 
   def apply(complexity: Complexity, isDebug: Boolean): InGameState = {
     val grid = if (complexity.solvedCellCount > 0) {
-      Complexity.changeSolvedGridByComplexity(Grid.solve(Grid().cells, printIntermediateGrids = isDebug), complexity)
+      Complexity.changeSolvedGridByComplexity(Grid.solve(Grid().cells, printIntermediateGrids = isDebug), complexity.solvedCellCount)
     } else {
       Grid()
     }

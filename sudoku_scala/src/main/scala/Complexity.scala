@@ -23,9 +23,9 @@ object Complexity {
 
   implicit val codec: JsonValueCodec[Complexity] = JsonCodecMaker.makeWithoutDiscriminator
 
-  def changeSolvedGridByComplexity(grid: Grid, complexity: Complexity): Grid = {
+  def changeSolvedGridByComplexity(grid: Grid, solvedCellCount: Int): Grid = {
     assert(Grid.isFinished(grid.cells))
-    val solvedIndexes = Random.shuffle(grid.cells.indices.toList).take(complexity.solvedCellCount).toSet
+    val solvedIndexes = Random.shuffle(grid.cells.indices.toList).take(solvedCellCount).toSet
     grid.cells.zipWithIndex.foreach {
       case (_, idx) => if (!solvedIndexes.contains(idx)) {
         grid.cells(idx) = 0
