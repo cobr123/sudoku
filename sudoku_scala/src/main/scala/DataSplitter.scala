@@ -40,25 +40,34 @@ object DataSplitter {
         val headers = s"${
           (0 until 9 * 9).map(idx => s"cell_$idx")
             .mkString(",")
-        }"
+        }\n"
         buffer.append(headers)
 
+        val options = if (Files.exists(csvPath)) StandardOpenOption.TRUNCATE_EXISTING
+        else StandardOpenOption.CREATE
+        Files.write(csvPath, buffer.mkString("").getBytes(StandardCharsets.UTF_8), options)
+        buffer.clear()
+
         grids.foreach { grid =>
-          val content = s"${grid.cells.mkString(",")}"
+          val content = s"${grid.cells.mkString(",")}\n"
           buffer.append(content)
 
           for (solvedCellCount <- Complexity.Extreme.solvedCellCount until grid.cells.length by 8) {
             val augmentedGrid = Complexity.changeSolvedGridByComplexity(Grid(grid.cells.clone()), solvedCellCount)
             // recover main cell
             augmentedGrid.cells(idx) = grid.cells(idx)
-            val content = s"${augmentedGrid.cells.mkString(",")}"
+            val content = s"${augmentedGrid.cells.mkString(",")}\n"
             buffer.append(content)
+            if (buffer.length >= 10000) {
+              Files.write(csvPath, buffer.mkString("").getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND)
+              buffer.clear()
+            }
           }
         }
-
-        val options = if (Files.exists(csvPath)) StandardOpenOption.TRUNCATE_EXISTING
-        else StandardOpenOption.CREATE
-        Files.write(csvPath, buffer.mkString("\n").getBytes(StandardCharsets.UTF_8), options)
+        if (buffer.nonEmpty) {
+          Files.write(csvPath, buffer.mkString("").getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND)
+          buffer.clear()
+        }
       }
     }
   }
