@@ -161,7 +161,7 @@ class GridSpec extends AnyFunSpec with TimeLimitedTests {
   it("change solved grid by complexity") {
     Complexity.values.foreach { complexity =>
       val grid = getSolvedGrid
-      Complexity.changeSolvedGridByComplexity(grid, complexity)
+      Complexity.changeSolvedGridByComplexity(grid, complexity.solvedCellCount)
       assert(grid.cells.count(_ != 0) == complexity.solvedCellCount)
       println(s"${complexity.toString}: ${complexity.solvedCellCount}")
       Grid.printGrid(grid.cells)
